@@ -1,0 +1,8 @@
+{
+  "name": "@kiosk/shared",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/types.ts"
+  }
+}

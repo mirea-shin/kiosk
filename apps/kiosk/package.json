@@ -1,0 +1,44 @@
+{
+  "name": "@kiosk/kiosk",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"pnpm dev:renderer\" \"pnpm dev:main\" \"pnpm dev:electron\"",
+    "dev:renderer": "vite",
+    "dev:main": "tsc -p tsconfig.node.json --watch --preserveWatchOutput",
+    "dev:electron": "wait-on http://localhost:5800 dist/electron/main.js && NODE_ENV=development electron dist/electron/main.js",
+    "build": "pnpm build:renderer && pnpm build:main",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.node.json",
+    "package": "pnpm build && electron-builder"
+  },
+  "dependencies": {
+    "@kiosk/shared": "workspace:*",
+    "@tanstack/react-query": "^5",
+    "react": "^19",
+    "react-dom": "^19",
+    "zustand": "^5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "concurrently": "^9",
+    "electron": "^34",
+    "electron-builder": "^25",
+    "tailwindcss": "^4",
+    "vite": "^6",
+    "wait-on": "^8"
+  },
+  "build": {
+    "appId": "com.kiosk.app",
+    "productName": "Kiosk",
+    "files": ["dist/**/*"],
+    "directories": {
+      "output": "release"
+    }
+  }
+}
