@@ -1,15 +1,28 @@
-import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
-import Database from 'better-sqlite3'
+import { createNodeWebSocket } from '@hono/node-ws'
+import { db, initSchema } from './db.js'
+import { wsManager } from './ws-manager.js'
+import { createApp } from './app.js'
 
-const app = new Hono()
-const db = new Database('kiosk.db')
+initSchema(db)
 
-app.get('/', (c) => {
-  return c.json({ status: 'ok' })
-})
+const app = createApp(db, wsManager)
+const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
 
-serve(
+// Register WebSocket route after upgradeWebSocket is available
+app.get(
+  '/ws',
+  upgradeWebSocket(() => ({
+    onOpen(_event, ws) {
+      wsManager.add(ws)
+    },
+    onClose(_event, ws) {
+      wsManager.remove(ws)
+    },
+  })),
+)
+
+const server = serve(
   {
     fetch: app.fetch,
     port: 3001,
@@ -18,3 +31,5 @@ serve(
     console.log(`Server running at http://localhost:${info.port}`)
   },
 )
+
+injectWebSocket(server)

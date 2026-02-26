@@ -8,10 +8,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "paths": {
-      "@kiosk/shared": ["../packages/shared/src/types.ts"]
-    }
+    "rootDir": "./src"
   },
   "include": ["src"]
 }
