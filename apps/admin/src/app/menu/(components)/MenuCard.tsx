@@ -8,6 +8,8 @@ export default function MenuCard({
   price,
   is_available,
   image_url,
+  handleEditMenu,
+  handleDeleteMenu,
 }: {
   id: number;
   name: string;
@@ -15,6 +17,8 @@ export default function MenuCard({
   price: number;
   is_available: boolean;
   image_url: string | null;
+  handleEditMenu: () => void;
+  handleDeleteMenu: () => void;
 }) {
   const EMPTY_IMG = 'HTTP';
 
@@ -38,8 +42,8 @@ export default function MenuCard({
         <footer className="flex justify-between">
           <p>{price}</p>
           <div>
-            <button>수정</button>
-            <button>삭제</button>
+            <button onClick={handleEditMenu}>수정</button>
+            <button onClick={handleDeleteMenu}>삭제</button>
           </div>
         </footer>
       </div>
