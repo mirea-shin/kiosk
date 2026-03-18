@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { serveStatic } from '@hono/node-server/serve-static'
 import type Database from 'better-sqlite3'
 import type { WsManager } from './ws-manager.js'
 import { categoriesRouter } from './routes/categories.js'
@@ -12,6 +13,9 @@ export function createApp(db: Database.Database, ws: WsManager) {
   const app = new Hono()
 
   app.use('*', cors({ origin: '*' }))
+
+  // 업로드된 스크린세이버 미디어 파일 정적 서빙
+  app.use('/uploads/*', serveStatic({ root: './' }))
 
   app.route('/api/categories', categoriesRouter(db))
   app.route('/api/menus', menusRouter(db))

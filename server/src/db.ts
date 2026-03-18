@@ -58,6 +58,17 @@ export function initSchema(db: Database.Database) {
     );
 
     INSERT OR IGNORE INTO screensaver_config(id) VALUES(1);
+
+    CREATE TABLE IF NOT EXISTS screensaver_media (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT NOT NULL UNIQUE,
+      original_name TEXT NOT NULL,
+      file_type TEXT NOT NULL CHECK(file_type IN ('image', 'video')),
+      file_size INTEGER NOT NULL,
+      display_duration_seconds INTEGER NOT NULL DEFAULT 5,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `)
 }
 
