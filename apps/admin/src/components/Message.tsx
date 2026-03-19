@@ -28,5 +28,5 @@ export default function Message() {
 
     return () => ws.close(); // 컴포넌트 언마운트 시 연결 끊기
   }, []);
-  return <div>{msg}</div>;
+  return <div className="absolute">{msg}</div>;
 }

@@ -7,7 +7,7 @@ import MenuCard from './MenuCard';
 
 import type { Category, Menu } from '@kiosk/shared';
 
-import { API_URL } from '../page';
+import { API_URL } from '@/lib/api';
 
 interface FormData {
   name: string;

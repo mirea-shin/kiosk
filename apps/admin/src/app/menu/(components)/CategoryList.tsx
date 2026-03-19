@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Category } from '@kiosk/shared';
 import React from 'react';
-import { API_URL } from '../page';
+import { API_URL } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 
 export default function CategoryList({
