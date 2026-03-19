@@ -131,7 +131,9 @@ export function screensaverRouter(db: Database.Database) {
 
   // PUT /api/screensaver/media/reorder — 재생 순서 저장
   app.put('/media/reorder', async (c) => {
-    const body = await c.req.json<{ orders: { id: number; sort_order: number }[] }>();
+    const body = await c.req.json<{
+      orders: { id: number; sort_order: number }[];
+    }>();
     if (!Array.isArray(body.orders)) {
       return c.json({ error: 'orders array is required' }, 400);
     }

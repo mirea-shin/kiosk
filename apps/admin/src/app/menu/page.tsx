@@ -1,8 +1,10 @@
 import React from 'react';
 
 import MenuList from './(components)/MenuList';
+import CategoryList from './(components)/CategoryList';
 
-export const API_URL = 'http://localhost:3001';
+import { API_URL } from '@/lib/api';
+export { API_URL };
 
 const getMenus = async () => {
   const response = await fetch(`${API_URL}/api/menus`);
@@ -21,12 +23,12 @@ const getCategories = async () => {
 export default async function MenuPage() {
   const [menus, categories] = await Promise.all([getMenus(), getCategories()]);
 
-  console.log(menus);
-  console.log(categories);
-
   return (
     <div>
       <h2>메인 디쉬</h2>
+      <div>
+        <CategoryList categories={categories} />
+      </div>
       <MenuList menus={menus} categories={categories} />
     </div>
   );

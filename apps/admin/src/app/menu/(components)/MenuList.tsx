@@ -154,10 +154,10 @@ export default function MenuList({
     <div>
       {showMenuForm && (
         <div className="absolute bg-red-100">
-          <div className="flex justify-between">
-            <h1>메뉴 {formType}</h1>
+          <header className="flex justify-between">
+            <h2>메뉴 {formType}</h2>
             <button onClick={initFormData}>X</button>
-          </div>
+          </header>
 
           <form onSubmit={handleFormSumbit}>
             {/* <div className="flex flex-col">
