@@ -49,7 +49,14 @@ function SortableMenuCard({
   handleDeleteMenu: () => void;
   handleToggleAvailable: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: menu.id,
   });
 
@@ -133,7 +140,9 @@ export default function MenuList({
     await fetch(`${API_URL}/api/menus/reorder`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reordered.map((m, i) => ({ id: m.id, sort_order: i + 1 }))),
+      body: JSON.stringify(
+        reordered.map((m, i) => ({ id: m.id, sort_order: i + 1 })),
+      ),
     });
   };
 
@@ -160,7 +169,10 @@ export default function MenuList({
     try {
       const body = new FormData();
       body.append('file', file);
-      const res = await fetch(`${API_URL}/api/menus/upload`, { method: 'POST', body });
+      const res = await fetch(`${API_URL}/api/menus/upload`, {
+        method: 'POST',
+        body,
+      });
       const data = await res.json();
       if (res.ok) setMenuFormData((prev) => ({ ...prev, image_url: data.url }));
     } finally {
@@ -170,7 +182,9 @@ export default function MenuList({
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>,
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
     const { value, id, type } = e.target;
     if (type === 'number') {
@@ -181,7 +195,10 @@ export default function MenuList({
   };
 
   const handleChangeCategory = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setMenuFormData((prev) => ({ ...prev, category_id: Number(e.target.value) }));
+    setMenuFormData((prev) => ({
+      ...prev,
+      category_id: Number(e.target.value),
+    }));
   };
 
   const handleToggleAvailable = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,14 +281,23 @@ export default function MenuList({
           <div className="w-[480px] rounded-2xl bg-white p-6 shadow-xl">
             <header className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold">메뉴 {formType}</h2>
-              <button onClick={initFormData} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button
+                onClick={initFormData}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
             </header>
             <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
               {/* Image upload */}
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-gray-700">이미지</label>
+                <label className="text-sm font-medium text-gray-700">
+                  이미지
+                </label>
                 <div
-                  onClick={() => !uploadingImage && fileInputRef.current?.click()}
+                  onClick={() =>
+                    !uploadingImage && fileInputRef.current?.click()
+                  }
                   className={`relative flex h-36 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-colors ${
                     menuFormData.image_url
                       ? 'border-transparent'
@@ -286,13 +312,19 @@ export default function MenuList({
                         className="h-full w-full object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors hover:bg-black/30">
-                        <Upload size={20} className="text-white opacity-0 transition-opacity hover:opacity-100" />
+                        <Upload
+                          size={20}
+                          className="text-white opacity-0 transition-opacity hover:opacity-100"
+                        />
                       </div>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setMenuFormData((prev) => ({ ...prev, image_url: null }));
+                          setMenuFormData((prev) => ({
+                            ...prev,
+                            image_url: null,
+                          }));
                         }}
                         className="absolute right-2 top-2 rounded-full bg-white/90 p-1 shadow hover:bg-red-50"
                       >
@@ -307,9 +339,13 @@ export default function MenuList({
                         <Upload size={24} />
                       )}
                       <span className="text-xs">
-                        {uploadingImage ? '업로드 중...' : '클릭하여 이미지 업로드'}
+                        {uploadingImage
+                          ? '업로드 중...'
+                          : '클릭하여 이미지 업로드'}
                       </span>
-                      <span className="text-xs text-gray-300">JPG · PNG · WebP · GIF · 최대 10MB</span>
+                      <span className="text-xs text-gray-300">
+                        JPG · PNG · WebP · GIF · 최대 10MB
+                      </span>
                     </div>
                   )}
                 </div>
@@ -323,7 +359,12 @@ export default function MenuList({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label htmlFor="name" className="text-sm font-medium text-gray-700">메뉴명</label>
+                <label
+                  htmlFor="name"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  메뉴명
+                </label>
                 <input
                   id="name"
                   className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
@@ -333,7 +374,12 @@ export default function MenuList({
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label htmlFor="description" className="text-sm font-medium text-gray-700">설명</label>
+                <label
+                  htmlFor="description"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  설명
+                </label>
                 <textarea
                   id="description"
                   rows={3}
@@ -344,7 +390,12 @@ export default function MenuList({
               </div>
               <div className="flex gap-4">
                 <div className="flex flex-1 flex-col gap-1">
-                  <label htmlFor="price" className="text-sm font-medium text-gray-700">가격</label>
+                  <label
+                    htmlFor="price"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    가격
+                  </label>
                   <input
                     id="price"
                     type="number"
@@ -355,7 +406,12 @@ export default function MenuList({
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
-                  <label htmlFor="category" className="text-sm font-medium text-gray-700">카테고리</label>
+                  <label
+                    htmlFor="category"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    카테고리
+                  </label>
                   <select
                     id="category"
                     className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
@@ -363,15 +419,21 @@ export default function MenuList({
                     onChange={handleChangeCategory}
                   >
                     {categories.map((c) => (
-                      <option value={c.id} key={c.id}>{c.name}</option>
+                      <option value={c.id} key={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-700">이용 가능 여부</p>
-                  <p className="text-xs text-gray-500">메뉴의 이용 가능 여부를 선택합니다.</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    이용 가능 여부
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    메뉴의 이용 가능 여부를 선택합니다.
+                  </p>
                 </div>
                 <label className="inline-flex cursor-pointer items-center">
                   <input
@@ -406,13 +468,15 @@ export default function MenuList({
 
       {/* Section header */}
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">{selectedCategory.name}</h2>
+        <h2 className="text-xl font-bold text-gray-900">
+          {selectedCategory.name}
+        </h2>
         <button
           onClick={() => setShowMenuForm(true)}
           className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
         >
           <Plus size={16} />
-          Add Item
+          메뉴 추가
         </button>
       </div>
 
@@ -428,14 +492,21 @@ export default function MenuList({
               className="flex items-center gap-1.5 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
             >
               <Plus size={16} />
-              Add Item
+              메뉴 추가
             </button>
           }
         />
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={localMenus.map((m) => m.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-3 gap-4">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={localMenus.map((m) => m.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {localMenus.map((m) => (
                 <SortableMenuCard
                   key={m.id}

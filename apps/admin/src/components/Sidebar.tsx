@@ -7,9 +7,9 @@ import { useSidebarStore } from '@/lib/stores/sidebar';
 import { useNotificationStore } from '@/lib/stores/notifications';
 
 const navItems = [
-  { href: '/orders', label: 'Orders', icon: ClipboardList },
-  { href: '/menu', label: 'Menu', icon: UtensilsCrossed },
-  { href: '/screensaver', label: 'Screensaver', icon: Monitor },
+  { href: '/orders', label: '주문관리', icon: ClipboardList },
+  { href: '/menu', label: '메뉴관리', icon: UtensilsCrossed },
+  { href: '/screensaver', label: '화면관리', icon: Monitor },
 ];
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {

@@ -325,7 +325,7 @@ export default function OrderList() {
           description={dateMode === 'today' ? '새 주문이 들어오면 여기에 표시됩니다.' : undefined}
         />
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {displayed.map((order) => (
             <OrderCard key={order.id} order={order} onStatusChange={fetchOrders} />
           ))}
