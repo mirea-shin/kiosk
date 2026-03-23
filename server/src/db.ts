@@ -46,8 +46,8 @@ export function initSchema(db: Database.Database) {
     );
 
     CREATE TABLE IF NOT EXISTS order_item_options (
-      order_item_id INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
-      menu_option_id INTEGER NOT NULL REFERENCES menu_options(id),
+      order_item_id  INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+      menu_option_id INTEGER NOT NULL REFERENCES menu_options(id) ON DELETE CASCADE,
       PRIMARY KEY (order_item_id, menu_option_id)
     );
 
@@ -70,6 +70,14 @@ export function initSchema(db: Database.Database) {
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS branding_config (
+      id            INTEGER PRIMARY KEY DEFAULT 1 CHECK(id = 1),
+      primary_color TEXT NOT NULL DEFAULT '#f97316',
+      updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    INSERT OR IGNORE INTO branding_config(id) VALUES(1);
+
     CREATE TABLE IF NOT EXISTS screensaver_changelog (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       action TEXT NOT NULL,
@@ -86,6 +94,28 @@ export function initSchema(db: Database.Database) {
   ]) {
     try { db.exec(sql) } catch { /* 이미 존재하면 무시 */ }
   }
+
+  // order_item_options 마이그레이션: menu_option_id에 ON DELETE CASCADE 추가
+  // SQLite는 ALTER TABLE ADD CONSTRAINT 미지원 → 테이블 재생성
+  const hasOldTable = db.prepare(
+    `SELECT sql FROM sqlite_master WHERE type='table' AND name='order_item_options'`
+  ).get() as { sql: string } | undefined
+
+  if (hasOldTable && !hasOldTable.sql.includes('ON DELETE CASCADE')) {
+    db.pragma('foreign_keys = OFF')
+    db.exec(`
+      CREATE TABLE order_item_options_new (
+        order_item_id  INTEGER NOT NULL REFERENCES order_items(id) ON DELETE CASCADE,
+        menu_option_id INTEGER NOT NULL REFERENCES menu_options(id) ON DELETE CASCADE,
+        PRIMARY KEY (order_item_id, menu_option_id)
+      );
+      INSERT OR IGNORE INTO order_item_options_new SELECT * FROM order_item_options;
+      DROP TABLE order_item_options;
+      ALTER TABLE order_item_options_new RENAME TO order_item_options;
+    `)
+    db.pragma('foreign_keys = ON')
+  }
 }
 
 export const db = new Database('kiosk.db')
+db.pragma('foreign_keys = ON')

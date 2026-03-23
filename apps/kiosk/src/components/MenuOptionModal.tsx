@@ -60,7 +60,7 @@ export default function MenuOptionModal({ menu, onClose, onAdd }: Props) {
             {menu.description && (
               <p className="text-xl text-gray-400 mb-3">{menu.description}</p>
             )}
-            <p className="text-3xl font-bold text-orange-500">
+            <p className="text-3xl font-bold text-brand">
               {menu.price.toLocaleString()}원
             </p>
           </div>
@@ -79,14 +79,14 @@ export default function MenuOptionModal({ menu, onClose, onAdd }: Props) {
                     onClick={() => toggle(option.id)}
                     className={`w-full flex justify-between items-center px-7 py-5 rounded-2xl border-2 text-2xl transition-all ${
                       isSelected
-                        ? 'border-orange-500 bg-orange-50 text-orange-700'
+                        ? 'border-brand bg-brand-light text-brand-dark'
                         : 'border-gray-100 bg-gray-50 text-gray-700'
                     }`}
                   >
                     <div className="flex items-center gap-4">
                       <div
                         className={`w-7 h-7 rounded-full border-2 flex items-center justify-center ${
-                          isSelected ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                          isSelected ? 'border-brand bg-brand' : 'border-gray-300'
                         }`}
                       >
                         {isSelected && (
@@ -97,7 +97,7 @@ export default function MenuOptionModal({ menu, onClose, onAdd }: Props) {
                       </div>
                       <span>{option.name}</span>
                     </div>
-                    <span className={isSelected ? 'text-orange-500' : 'text-gray-400'}>
+                    <span className={isSelected ? 'text-brand' : 'text-gray-400'}>
                       +{option.price.toLocaleString()}원
                     </span>
                   </button>
@@ -120,7 +120,7 @@ export default function MenuOptionModal({ menu, onClose, onAdd }: Props) {
             <span className="text-4xl font-bold w-12 text-center">{quantity}</span>
             <button
               onClick={() => setQuantity((q) => q + 1)}
-              className="w-16 h-16 rounded-full bg-orange-500 text-white flex items-center justify-center text-3xl active:bg-orange-600"
+              className="w-16 h-16 rounded-full bg-brand text-white flex items-center justify-center text-3xl active:bg-brand-dark"
             >
               +
             </button>
@@ -130,7 +130,7 @@ export default function MenuOptionModal({ menu, onClose, onAdd }: Props) {
         {/* 담기 버튼 */}
         <button
           onClick={handleAdd}
-          className="w-full py-7 bg-orange-500 active:bg-orange-600 text-white text-3xl font-bold rounded-2xl transition-colors"
+          className="w-full py-7 bg-brand active:bg-brand-dark text-white text-3xl font-bold rounded-2xl transition-colors"
         >
           {totalPrice.toLocaleString()}원 담기
         </button>

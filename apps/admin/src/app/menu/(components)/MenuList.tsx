@@ -23,7 +23,7 @@ import MenuCard from './MenuCard';
 import EmptyState from '@/components/EmptyState';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
-import type { Category, Menu } from '@kiosk/shared';
+import type { Category, Menu, MenuOption } from '@kiosk/shared';
 
 import { API_URL } from '@/lib/api';
 
@@ -105,6 +105,7 @@ export default function MenuList({
   const [showMenuForm, setShowMenuForm] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Menu | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [menuFormData, setMenuFormData] = useState<FormData>({
     name: '',
@@ -115,6 +116,13 @@ export default function MenuList({
     is_available: true,
   });
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
+
+  // 옵션 관련 상태
+  const [options, setOptions] = useState<MenuOption[]>([]);           // 수정 모드: 서버 저장된 옵션
+  const [pendingOptions, setPendingOptions] = useState<{ name: string; price: number }[]>([]); // 추가 모드: 임시 옵션
+  const [newOptionName, setNewOptionName] = useState('');
+  const [newOptionPrice, setNewOptionPrice] = useState(0);
+  const [addingOption, setAddingOption] = useState(false);
 
   // 카테고리 전환이나 서버 refresh 시 동기화
   useEffect(() => {
@@ -160,6 +168,10 @@ export default function MenuList({
     setShowMenuForm(false);
     if (selectedMenu) setSelectedMenu(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setOptions([]);
+    setPendingOptions([]);
+    setNewOptionName('');
+    setNewOptionPrice(0);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,6 +247,18 @@ export default function MenuList({
       : await updateMenu(menuFormData, selectedMenu.id);
     const data = await result.json();
     if (result.ok) {
+      // 추가 모드에서 임시 옵션이 있으면 일괄 등록
+      if (!selectedMenu && pendingOptions.length > 0) {
+        await Promise.all(
+          pendingOptions.map((opt) =>
+            fetch(`${API_URL}/api/menus/${data.id}/options`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(opt),
+            }),
+          ),
+        );
+      }
       initFormData();
       router.refresh();
     } else {
@@ -246,11 +270,55 @@ export default function MenuList({
     setShowMenuForm(true);
     setSelectedMenu(menu);
     setMenuFormData({ ...menu });
+    setOptions(menu.options ?? []);
+    setNewOptionName('');
+    setNewOptionPrice(0);
   };
 
-  const handleDeleteMenu = async (id: number) => {
+  const handleAddOption = async () => {
+    if (!newOptionName.trim()) return;
+    if (selectedMenu) {
+      // 수정 모드: 즉시 API 호출
+      setAddingOption(true);
+      try {
+        const res = await fetch(`${API_URL}/api/menus/${selectedMenu.id}/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newOptionName.trim(), price: newOptionPrice }),
+        });
+        if (res.ok) {
+          const created: MenuOption = await res.json();
+          setOptions((prev) => [...prev, created]);
+          setNewOptionName('');
+          setNewOptionPrice(0);
+        }
+      } finally {
+        setAddingOption(false);
+      }
+    } else {
+      // 추가 모드: 로컬 상태에 임시 저장
+      setPendingOptions((prev) => [...prev, { name: newOptionName.trim(), price: newOptionPrice }]);
+      setNewOptionName('');
+      setNewOptionPrice(0);
+    }
+  };
+
+  const handleDeleteOption = async (optionId: number) => {
+    if (!selectedMenu) return;
+    await fetch(`${API_URL}/api/menus/${selectedMenu.id}/options/${optionId}`, { method: 'DELETE' });
+    setOptions((prev) => prev.filter((o) => o.id !== optionId));
+  };
+
+  const handleDeleteMenu = async (id: number): Promise<boolean> => {
     const result = await deleteMenu(id);
-    if (result.ok) router.refresh();
+    if (result.ok) {
+      router.refresh();
+      return true;
+    } else {
+      const data = await result.json().catch(() => ({}));
+      setDeleteError(data.error ?? '삭제에 실패했습니다.');
+      return false;
+    }
   };
 
   const handleToggleMenuAvailable = async (menu: Menu) => {
@@ -266,13 +334,18 @@ export default function MenuList({
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title={`'${deleteTarget?.name}' 메뉴를 삭제할까요?`}
-        description="삭제한 메뉴는 복구할 수 없습니다."
+        description={deleteError
+          ? <span className="text-red-500">{deleteError}</span>
+          : '삭제한 메뉴는 복구할 수 없습니다.'}
         confirmLabel="삭제"
         onConfirm={async () => {
-          if (deleteTarget) await handleDeleteMenu(deleteTarget.id);
-          setDeleteTarget(null);
+          setDeleteError(null);
+          if (deleteTarget) {
+            const ok = await handleDeleteMenu(deleteTarget.id);
+            if (ok) setDeleteTarget(null);
+          }
         }}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => { setDeleteTarget(null); setDeleteError(null); }}
       />
 
       {/* Menu Add / Edit Modal */}
@@ -288,7 +361,7 @@ export default function MenuList({
                 ✕
               </button>
             </header>
-            <form onSubmit={handleFormSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleFormSubmit} className="flex flex-col gap-4 max-h-[75vh] overflow-y-auto pr-1">
               {/* Image upload */}
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium text-gray-700">
@@ -426,6 +499,84 @@ export default function MenuList({
                   </select>
                 </div>
               </div>
+              {/* 옵션 관리 */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-gray-700">옵션</label>
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  {selectedMenu ? (
+                    // 수정 모드: 서버에 저장된 옵션 목록
+                    options.length === 0 ? (
+                      <p className="py-3 text-center text-xs text-gray-400">등록된 옵션이 없습니다</p>
+                    ) : (
+                      <ul className="divide-y divide-gray-100">
+                        {options.map((option) => (
+                          <li key={option.id} className="flex items-center justify-between px-3 py-2.5 text-sm">
+                            <span className="text-gray-800">{option.name}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-400">+{option.price.toLocaleString()}원</span>
+                              <button type="button" onClick={() => handleDeleteOption(option.id)} className="text-red-400 hover:text-red-600">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  ) : (
+                    // 추가 모드: 임시 옵션 목록
+                    pendingOptions.length === 0 ? (
+                      <p className="py-3 text-center text-xs text-gray-400">등록된 옵션이 없습니다</p>
+                    ) : (
+                      <ul className="divide-y divide-gray-100">
+                        {pendingOptions.map((option, index) => (
+                          <li key={index} className="flex items-center justify-between px-3 py-2.5 text-sm">
+                            <span className="text-gray-800">{option.name}</span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-gray-400">+{option.price.toLocaleString()}원</span>
+                              <button
+                                type="button"
+                                onClick={() => setPendingOptions((prev) => prev.filter((_, i) => i !== index))}
+                                className="text-red-400 hover:text-red-600"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  )}
+                  {/* 옵션 추가 입력 */}
+                  <div className="flex gap-2 border-t border-gray-100 bg-gray-50 px-3 py-2">
+                    <input
+                      type="text"
+                      placeholder="옵션명"
+                      value={newOptionName}
+                      onChange={(e) => setNewOptionName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
+                      className="flex-1 rounded border border-gray-200 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="추가 가격"
+                      value={newOptionPrice}
+                      onChange={(e) => setNewOptionPrice(Number(e.target.value))}
+                      className="w-24 rounded border border-gray-200 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddOption}
+                      disabled={!newOptionName.trim() || addingOption}
+                      className="flex items-center gap-1 rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {addingOption ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                      추가
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
                 <div>
                   <p className="text-sm font-medium text-gray-700">
