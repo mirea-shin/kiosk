@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ClipboardList, UtensilsCrossed, Monitor, Palette, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ClipboardList, UtensilsCrossed, Monitor, Palette, RotateCcw, X } from 'lucide-react';
 import { useSidebarStore } from '@/lib/stores/sidebar';
 import { useNotificationStore } from '@/lib/stores/notifications';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { API_URL } from '@/lib/api';
 
 const navItems = [
   { href: '/orders', label: '주문관리', icon: ClipboardList },
@@ -15,7 +18,21 @@ const navItems = [
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { unreadCount, markRead } = useNotificationStore();
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch(`${API_URL}/api/demo/refresh`, { method: 'POST' });
+      router.refresh();
+    } finally {
+      setRefreshing(false);
+      setShowRefreshConfirm(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -74,9 +91,35 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-gray-200 px-5 py-4">
+      <div className="border-t border-gray-200 px-4 py-3 flex items-center justify-between">
         <p className="text-xs text-gray-400">v1.0.0</p>
+        <button
+          onClick={() => setShowRefreshConfirm(true)}
+          disabled={refreshing}
+          title="데모 초기화"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50 transition-colors"
+        >
+          <RotateCcw size={13} className={refreshing ? 'animate-spin' : ''} />
+          초기화
+        </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={showRefreshConfirm}
+        title="데모 초기화"
+        description={
+          <ul className="mt-1 space-y-1 text-left text-xs text-gray-500">
+            <li>• 메뉴 · 카테고리 → 기본 씨드로 복원</li>
+            <li>• 브랜드 색상 → 기본값으로</li>
+            <li>• 스크린세이버 미디어 전체 삭제</li>
+            <li className="text-gray-400">• 주문 내역은 유지됩니다</li>
+          </ul>
+        }
+        confirmLabel="초기화"
+        variant="danger"
+        onConfirm={handleRefresh}
+        onCancel={() => setShowRefreshConfirm(false)}
+      />
     </div>
   );
 }
