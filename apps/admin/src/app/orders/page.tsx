@@ -13,8 +13,8 @@ export default async function OrdersPage() {
   return (
     <div>
       <PageHeader
-        title="Orders"
-        description="Manage incoming orders in real-time"
+        title="주문 관리"
+        description="주문을 실시간으로 확인하고 관리하세요"
       />
       <div className="p-6">
         <OrderList />

@@ -39,18 +39,25 @@ export function ordersRouter(db: Database.Database, ws: WsManager) {
 
   app.get('/', (c) => {
     const status = c.req.query('status');
-    let orders: OrderRow[];
+    const date = c.req.query('date'); // YYYY-MM-DD
+
+    const conditions: string[] = [];
+    const params: string[] = [];
+
     if (status) {
-      orders = db
-        .prepare(
-          'SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC',
-        )
-        .all(status) as OrderRow[];
-    } else {
-      orders = db
-        .prepare('SELECT * FROM orders ORDER BY created_at DESC')
-        .all() as OrderRow[];
+      conditions.push('status = ?');
+      params.push(status);
     }
+    if (date) {
+      conditions.push("date(created_at) = ?");
+      params.push(date);
+    }
+
+    const where = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+    const orders = db
+      .prepare(`SELECT * FROM orders${where} ORDER BY created_at DESC`)
+      .all(...params) as OrderRow[];
+
     return c.json(attachItems(db, orders));
   });
 

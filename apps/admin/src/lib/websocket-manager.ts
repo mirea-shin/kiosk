@@ -3,10 +3,12 @@ import { debounce } from './debounce';
 
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let refreshFn: (() => void) | null = null;
 
-// 메시지가 연달아 와도 500ms 내 마지막 것만, 최대 2초마다 1회 보장
-const debouncedRefresh = debounce(() => refreshFn?.(), 500, 2000);
+const subscribers = new Set<() => void>();
+
+const debouncedNotify = debounce(() => {
+  subscribers.forEach((fn) => fn());
+}, 500, 2000);
 
 function connect() {
   if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) return;
@@ -20,9 +22,9 @@ function connect() {
 
       if (event === 'order:created') {
         addOrMergeToast(event, '새 주문이 들어왔습니다');
-        debouncedRefresh();
-      } else if (event === 'order:updated') {
-        debouncedRefresh();
+        debouncedNotify();
+      } else if (event === 'order:status_changed') {
+        debouncedNotify();
       }
     } catch {
       // 파싱 실패는 무시
@@ -31,19 +33,27 @@ function connect() {
 
   ws.onclose = () => {
     ws = null;
-    reconnectTimer = setTimeout(connect, 3000); // 3초 후 재연결
+    reconnectTimer = setTimeout(connect, 3000);
   };
 
   ws.onerror = () => ws?.close();
 }
 
-export function initWebSocket(onRefresh: () => void) {
-  refreshFn = onRefresh;
+export function addRefreshSubscriber(fn: () => void) {
+  subscribers.add(fn);
   connect();
 }
 
+export function removeRefreshSubscriber(fn: () => void) {
+  subscribers.delete(fn);
+}
+
+export function initWebSocket(onRefresh: () => void) {
+  addRefreshSubscriber(onRefresh);
+}
+
 export function destroyWebSocket() {
-  refreshFn = null;
+  subscribers.clear();
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
