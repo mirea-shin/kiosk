@@ -7,7 +7,7 @@ import MenuManagement from './(components)/MenuManagement';
 import { API_URL } from '@/lib/api';
 
 export const metadata: Metadata = {
-  title: 'Menu Management',
+  title: '메뉴 관리',
   description: 'Manage categories and menu items',
 };
 

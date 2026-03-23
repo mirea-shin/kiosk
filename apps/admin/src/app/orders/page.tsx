@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import OrderList from './(components)/OrderList';
 
 export const metadata: Metadata = {
-  title: 'Orders',
+  title: '주문 관리',
   description: 'Manage incoming orders in real-time',
 };
 

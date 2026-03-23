@@ -8,12 +8,14 @@ import IdleTimeSetting from './(components)/IdleTimeSetting';
 import MediaSetting from './(components)/MediaSetting';
 
 export const metadata: Metadata = {
-  title: 'Screensaver',
+  title: '화면 관리',
   description: 'Configure screensaver media and idle timeout settings',
 };
 
 const getScreenSaver = async (): Promise<ScreensaverAdminData> => {
-  const response = await fetch(`${API_URL}/api/screensaver`, { cache: 'no-store' });
+  const response = await fetch(`${API_URL}/api/screensaver`, {
+    cache: 'no-store',
+  });
   return response.json();
 };
 

@@ -26,7 +26,12 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch(`${API_URL}/api/demo/refresh`, { method: 'POST' });
+      const res = await fetch(`${API_URL}/api/demo/refresh`, { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.error('[demo/refresh] 실패:', data);
+        return;
+      }
       router.refresh();
     } finally {
       setRefreshing(false);

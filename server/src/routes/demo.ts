@@ -1,11 +1,17 @@
 import { Hono } from 'hono'
-import { readdir, unlink } from 'fs/promises'
+import { readdir, unlink, copyFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import type Database from 'better-sqlite3'
 import type { WsManager } from '../ws-manager.js'
 import { initSchema } from '../db.js'
 
 const UPLOADS_DIR = join(process.cwd(), 'uploads', 'screensaver')
+const SEEDS_DIR = join(process.cwd(), 'seeds', 'screensaver')
+
+const SCREENSAVER_SEEDS = [
+  { filename: '465e2653-1a58-45eb-92b1-fea05f0aa8ca.jpg', original_name: 'amin-ramezani-hs75Yb9uaK8-unsplash.jpg', file_type: 'image', file_size: 2048020, display_duration_seconds: 5, sort_order: 0 },
+  { filename: 'e3fe8142-07fd-400c-b50b-9e0317dd2e7c.jpg', original_name: 'alex-bayev-uo46nevU9i4-unsplash.jpg',    file_type: 'image', file_size: 1946262, display_duration_seconds: 5, sort_order: 1 },
+] as const
 
 export function demoRouter(db: Database.Database, ws: WsManager) {
   const app = new Hono()
@@ -18,55 +24,82 @@ export function demoRouter(db: Database.Database, ws: WsManager) {
       await Promise.all(files.map((f) => unlink(join(UPLOADS_DIR, f))))
     } catch { /* 디렉토리 없으면 무시 */ }
 
-    // 2. DB 초기화 (주문 제외)
-    db.exec(`
-      DELETE FROM screensaver_media;
-      DELETE FROM screensaver_changelog;
-      UPDATE screensaver_config SET
-        idle_timeout_seconds = 60,
-        last_modified_at = NULL,
-        last_published_at = NULL,
-        updated_at = datetime('now')
-      WHERE id = 1;
-      UPDATE branding_config SET
-        primary_color = '#f97316',
-        updated_at = datetime('now')
-      WHERE id = 1;
-      DELETE FROM menu_options;
-      DELETE FROM menus;
-      DELETE FROM categories;
-    `)
+    // 2. DB 초기화 (주문 제외) — 트랜잭션으로 원자적 처리
+    try {
+      db.transaction(() => {
+        db.exec(`
+          DELETE FROM screensaver_media;
+          DELETE FROM screensaver_changelog;
+          UPDATE screensaver_config SET
+            idle_timeout_seconds = 60,
+            last_modified_at = NULL,
+            last_published_at = NULL,
+            updated_at = datetime('now')
+          WHERE id = 1;
+          UPDATE branding_config SET
+            primary_color = '#f97316',
+            updated_at = datetime('now')
+          WHERE id = 1;
+          DELETE FROM order_item_options;
+          DELETE FROM menu_options;
+          DELETE FROM menus;
+          DELETE FROM categories;
+        `)
+      })()
+    } catch (err) {
+      console.error('[demo/refresh] DB 초기화 실패:', err)
+      return c.json({ success: false, error: String(err) }, 500)
+    }
 
     // 3. 메뉴 씨드 복원
     const cat1 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('버거', 0)
     const cat2 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('사이드', 1)
     const cat3 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('음료', 2)
 
+    const IMG = 'http://localhost:3001/uploads/menus'
     const menu1 = db.prepare(
-      'INSERT INTO menus (category_id, name, description, price, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(cat1.lastInsertRowid, '클래식 버거', '클래식 소고기 패티 버거', 8900, 1, 0)
+      'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(cat1.lastInsertRowid, '클래식 버거', '클래식 소고기 패티 버거', 8900, `${IMG}/abb29420-b622-4fb4-a144-cf88b1326200.jpg`, 1, 0)
     const menu2 = db.prepare(
-      'INSERT INTO menus (category_id, name, description, price, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(cat1.lastInsertRowid, '치즈 버거', '치즈가 듬뿍 들어간 버거', 9900, 1, 1)
+      'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(cat1.lastInsertRowid, '치즈 버거', '치즈가 듬뿍 들어간 버거', 9900, `${IMG}/262e2f38-42cf-416f-99b1-ba0b155eb59e.jpg`, 1, 1)
     const menu3 = db.prepare(
-      'INSERT INTO menus (category_id, name, description, price, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(cat2.lastInsertRowid, '감자튀김', '바삭한 황금빛 감자튀김', 3500, 1, 0)
+      'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(cat2.lastInsertRowid, '감자튀김', '바삭한 황금빛 감자튀김', 3500, `${IMG}/05771055-1da6-47cd-8e11-aac7c8c695a0.jpg`, 1, 0)
     db.prepare(
-      'INSERT INTO menus (category_id, name, description, price, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(cat2.lastInsertRowid, '어니언링', '바삭한 어니언링', 4000, 1, 1)
+      'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(cat2.lastInsertRowid, '어니언링', '바삭한 어니언링', 4000, `${IMG}/f42e346e-b455-45d6-a4da-f291357b4cfc.jpg`, 1, 1)
     db.prepare(
-      'INSERT INTO menus (category_id, name, description, price, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(cat3.lastInsertRowid, '콜라', '시원한 콜라', 2000, 1, 0)
+      'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(cat3.lastInsertRowid, '콜라', '시원한 콜라', 2000, `${IMG}/9b8fd734-d002-4dde-9bb4-4e1a6fa7dc4e.jpg`, 1, 0)
     db.prepare(
-      'INSERT INTO menus (category_id, name, description, price, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(cat3.lastInsertRowid, '오렌지 주스', '신선한 오렌지 주스', 2500, 1, 1)
+      'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(cat3.lastInsertRowid, '오렌지 주스', '신선한 오렌지 주스', 2500, `${IMG}/7e8a290a-b001-4b09-b0cc-d8611a883e0c.jpg`, 1, 1)
 
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu1.lastInsertRowid, '패티 추가', 2000)
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu1.lastInsertRowid, '치즈 추가', 500)
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu2.lastInsertRowid, '더블 패티', 3000)
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu3.lastInsertRowid, '라지 업그레이드', 500)
 
-    // 4. 키오스크에 변경사항 즉시 반영
+    // 4. 씨드 스크린세이버 파일 복사 + DB 재삽입
+    try {
+      await mkdir(UPLOADS_DIR, { recursive: true })
+      for (const seed of SCREENSAVER_SEEDS) {
+        await copyFile(join(SEEDS_DIR, seed.filename), join(UPLOADS_DIR, seed.filename))
+      }
+      const insertMedia = db.prepare(
+        'INSERT INTO screensaver_media (filename, original_name, file_type, file_size, display_duration_seconds, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      db.transaction(() => {
+        for (const seed of SCREENSAVER_SEEDS) {
+          insertMedia.run(seed.filename, seed.original_name, seed.file_type, seed.file_size, seed.display_duration_seconds, seed.sort_order)
+        }
+      })()
+    } catch (err) {
+      console.error('[demo/refresh] 스크린세이버 씨드 복원 실패:', err)
+    }
+
+    // 5. 키오스크에 변경사항 즉시 반영
     ws.broadcast('branding:sync', { primary_color: '#f97316' })
     ws.broadcast('screensaver:sync', {})
 
