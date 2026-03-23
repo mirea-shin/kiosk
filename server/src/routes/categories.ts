@@ -11,15 +11,28 @@ export function categoriesRouter(db: Database.Database) {
   })
 
   app.post('/', async (c) => {
-    const body = await c.req.json<Pick<Category, 'name'> & { sort_order?: number }>()
+    const body = await c.req.json<Pick<Category, 'name'>>()
     if (!body.name) return c.json({ error: 'name is required' }, 400)
+    const maxRow = db.prepare('SELECT MAX(sort_order) as max FROM categories').get() as { max: number | null }
+    const sortOrder = (maxRow.max ?? 0) + 1
     const result = db
       .prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)')
-      .run(body.name, body.sort_order ?? 0)
+      .run(body.name, sortOrder)
     const row = db
       .prepare('SELECT * FROM categories WHERE id = ?')
       .get(result.lastInsertRowid) as Category
     return c.json(row, 201)
+  })
+
+  app.patch('/reorder', async (c) => {
+    const body = await c.req.json<{ id: number; sort_order: number }[]>()
+    if (!Array.isArray(body)) return c.json({ error: 'Array expected' }, 400)
+    const update = db.prepare('UPDATE categories SET sort_order = ? WHERE id = ?')
+    const updateAll = db.transaction((items: { id: number; sort_order: number }[]) => {
+      for (const item of items) update.run(item.sort_order, item.id)
+    })
+    updateAll(body)
+    return c.json({ success: true })
   })
 
   app.put('/:id', async (c) => {

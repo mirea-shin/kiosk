@@ -2,14 +2,13 @@ import type { Metadata } from 'next';
 import React from 'react';
 
 import PageHeader from '@/components/PageHeader';
-import MenuList from './(components)/MenuList';
-import CategoryList from './(components)/CategoryList';
+import MenuManagement from './(components)/MenuManagement';
 
 import { API_URL } from '@/lib/api';
 
 export const metadata: Metadata = {
-  title: 'Menu',
-  description: 'Manage menu items and categories',
+  title: 'Menu Management',
+  description: 'Manage categories and menu items',
 };
 
 const getMenus = async () => {
@@ -30,14 +29,11 @@ export default async function MenuPage() {
   return (
     <div>
       <PageHeader
-        title="Menu"
-        description="Manage menu items and categories"
+        title="메뉴 관리"
+        description="메뉴와 카테고리를 한곳에서 관리하세요"
       />
       <div className="p-6">
-        <div>
-          <CategoryList categories={categories} />
-        </div>
-        <MenuList menus={menus} categories={categories} />
+        <MenuManagement menus={menus} categories={categories} />
       </div>
     </div>
   );

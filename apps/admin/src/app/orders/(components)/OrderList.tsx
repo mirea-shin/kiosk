@@ -7,6 +7,8 @@ import {
   removeRefreshSubscriber,
 } from '@/lib/websocket-manager';
 import { useNotificationStore } from '@/lib/stores/notifications';
+import EmptyState from '@/components/EmptyState';
+import { ShoppingCart } from 'lucide-react';
 
 type OrderWithItems = Order & { items: OrderItem[] };
 
@@ -317,9 +319,11 @@ export default function OrderList() {
 
       {/* Order cards grid */}
       {displayed.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          {dateMode === 'today' ? '오늘 접수된 주문이 없습니다.' : '주문이 없습니다.'}
-        </div>
+        <EmptyState
+          icon={<ShoppingCart size={28} />}
+          title={selectedStatus !== undefined ? `${STATUS_CONFIG[selectedStatus].label} 주문이 없습니다` : dateMode === 'today' ? '오늘 접수된 주문이 없습니다' : '주문이 없습니다'}
+          description={dateMode === 'today' ? '새 주문이 들어오면 여기에 표시됩니다.' : undefined}
+        />
       ) : (
         <div className="grid grid-cols-3 gap-4">
           {displayed.map((order) => (

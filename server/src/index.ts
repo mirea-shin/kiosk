@@ -8,6 +8,7 @@ import { createApp } from './app.js'
 import { seedDailyOrders } from './seed-daily.js'
 
 await mkdir(join(process.cwd(), 'uploads', 'screensaver'), { recursive: true })
+await mkdir(join(process.cwd(), 'uploads', 'menus'), { recursive: true })
 
 initSchema(db)
 seedDailyOrders(db)
