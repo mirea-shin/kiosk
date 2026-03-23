@@ -1,8 +1,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import type { Category, Menu } from '@kiosk/shared';
 import CategoryList from './CategoryList';
-import MenuList from './MenuList';
+
+const MenuList = dynamic(() => import('./MenuList'), { ssr: false });
 
 export default function MenuManagement({
   menus,

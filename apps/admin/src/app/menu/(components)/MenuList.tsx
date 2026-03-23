@@ -27,6 +27,14 @@ import type { Category, Menu, MenuOption } from '@kiosk/shared';
 
 import { API_URL } from '@/lib/api';
 
+const MENU_NAME_MAX = 20;
+const MENU_DESC_MAX = 60;
+const PRICE_MIN = 100;
+const PRICE_MAX = 99999;
+const OPT_NAME_MAX = 15;
+const OPT_PRICE_MAX = 50000;
+const OPT_COUNT_MAX = 5;
+
 interface FormData {
   name: string;
   category_id: number | null;
@@ -432,14 +440,15 @@ export default function MenuList({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label
-                  htmlFor="name"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  메뉴명
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="name" className="text-sm font-medium text-gray-700">메뉴명</label>
+                  <span className={`text-xs ${menuFormData.name.length >= MENU_NAME_MAX ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                    {menuFormData.name.length} / {MENU_NAME_MAX}
+                  </span>
+                </div>
                 <input
                   id="name"
+                  maxLength={MENU_NAME_MAX}
                   className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
                   onChange={handleInputChange}
                   value={menuFormData.name}
@@ -447,15 +456,16 @@ export default function MenuList({
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label
-                  htmlFor="description"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  설명
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="description" className="text-sm font-medium text-gray-700">설명</label>
+                  <span className={`text-xs ${(menuFormData.description?.length ?? 0) >= MENU_DESC_MAX ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                    {menuFormData.description?.length ?? 0} / {MENU_DESC_MAX}
+                  </span>
+                </div>
                 <textarea
                   id="description"
                   rows={3}
+                  maxLength={MENU_DESC_MAX}
                   className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
                   onChange={handleInputChange}
                   value={menuFormData.description || ''}
@@ -463,20 +473,19 @@ export default function MenuList({
               </div>
               <div className="flex gap-4">
                 <div className="flex flex-1 flex-col gap-1">
-                  <label
-                    htmlFor="price"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    가격
-                  </label>
+                  <label htmlFor="price" className="text-sm font-medium text-gray-700">가격</label>
                   <input
                     id="price"
                     type="number"
-                    min={0}
+                    min={PRICE_MIN}
+                    max={PRICE_MAX}
                     className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
                     onChange={handleInputChange}
                     value={Number(menuFormData.price).toFixed()}
                   />
+                  {menuFormData.price !== null && (menuFormData.price < PRICE_MIN || menuFormData.price > PRICE_MAX) && (
+                    <p className="text-xs text-red-500">{PRICE_MIN.toLocaleString()}원 ~ {PRICE_MAX.toLocaleString()}원 사이로 입력하세요</p>
+                  )}
                 </div>
                 <div className="flex flex-1 flex-col gap-1">
                   <label
@@ -501,7 +510,12 @@ export default function MenuList({
               </div>
               {/* 옵션 관리 */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">옵션</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">옵션</label>
+                  <span className={`text-xs ${(selectedMenu ? options.length : pendingOptions.length) >= OPT_COUNT_MAX ? 'text-amber-500 font-medium' : 'text-gray-400'}`}>
+                    {selectedMenu ? options.length : pendingOptions.length} / {OPT_COUNT_MAX}
+                  </span>
+                </div>
                 <div className="rounded-lg border border-gray-200 overflow-hidden">
                   {selectedMenu ? (
                     // 수정 모드: 서버에 저장된 옵션 목록
@@ -551,6 +565,7 @@ export default function MenuList({
                     <input
                       type="text"
                       placeholder="옵션명"
+                      maxLength={OPT_NAME_MAX}
                       value={newOptionName}
                       onChange={(e) => setNewOptionName(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOption())}
@@ -559,6 +574,7 @@ export default function MenuList({
                     <input
                       type="number"
                       min={0}
+                      max={OPT_PRICE_MAX}
                       placeholder="추가 가격"
                       value={newOptionPrice}
                       onChange={(e) => setNewOptionPrice(Number(e.target.value))}
@@ -567,8 +583,9 @@ export default function MenuList({
                     <button
                       type="button"
                       onClick={handleAddOption}
-                      disabled={!newOptionName.trim() || addingOption}
-                      className="flex items-center gap-1 rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50"
+                      disabled={!newOptionName.trim() || addingOption || (selectedMenu ? options.length : pendingOptions.length) >= OPT_COUNT_MAX}
+                      title={(selectedMenu ? options.length : pendingOptions.length) >= OPT_COUNT_MAX ? `옵션은 최대 ${OPT_COUNT_MAX}개까지 추가할 수 있습니다` : undefined}
+                      className="flex items-center gap-1 rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {addingOption ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
                       추가
@@ -606,7 +623,12 @@ export default function MenuList({
                 </button>
                 <button
                   type="submit"
-                  disabled={!menuFormData.name || menuFormData.price === null}
+                  disabled={
+                    !menuFormData.name.trim() ||
+                    menuFormData.price === null ||
+                    menuFormData.price < PRICE_MIN ||
+                    menuFormData.price > PRICE_MAX
+                  }
                   className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
                 >
                   {formType}

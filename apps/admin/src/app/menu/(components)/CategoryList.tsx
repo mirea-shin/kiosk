@@ -33,7 +33,14 @@ function SortableCategoryRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: category.id,
   });
 
@@ -77,6 +84,9 @@ function SortableCategoryRow({
   );
 }
 
+const CATEGORY_MAX = 8;
+const CAT_NAME_MAX = 10;
+
 // ── CategoryList ───────────────────────────────────────
 
 export default function CategoryList({
@@ -94,8 +104,11 @@ export default function CategoryList({
   const [showAddForm, setShowAddForm] = useState(false);
   const [showManageModal, setShowManageModal] = useState(false);
   const [categoryName, setCategoryName] = useState('');
-  const [editingCategory, setEditingCategory] = useState<Category | undefined>();
-  const [sortedCategories, setSortedCategories] = useState<Category[]>(categories);
+  const [editingCategory, setEditingCategory] = useState<
+    Category | undefined
+  >();
+  const [sortedCategories, setSortedCategories] =
+    useState<Category[]>(categories);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
   // 서버 refresh 시 동기화
@@ -120,7 +133,9 @@ export default function CategoryList({
     await fetch(`${API_URL}/api/categories/reorder`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reordered.map((c, i) => ({ id: c.id, sort_order: i + 1 }))),
+      body: JSON.stringify(
+        reordered.map((c, i) => ({ id: c.id, sort_order: i + 1 })),
+      ),
     });
   };
 
@@ -145,7 +160,11 @@ export default function CategoryList({
     });
   };
 
-  const updateCategory = async (id: number, name: string, sort_order: number) => {
+  const updateCategory = async (
+    id: number,
+    name: string,
+    sort_order: number,
+  ) => {
     return fetch(`${API_URL}/api/categories/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -164,9 +183,14 @@ export default function CategoryList({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!categoryName) return;
+    if (!categoryName.trim() || categoryName.length > CAT_NAME_MAX) return;
+    if (!editingCategory && categories.length >= CATEGORY_MAX) return;
     if (editingCategory) {
-      const result = await updateCategory(editingCategory.id, categoryName, editingCategory.sort_order);
+      const result = await updateCategory(
+        editingCategory.id,
+        categoryName,
+        editingCategory.sort_order,
+      );
       if (result.ok) {
         closeAddForm();
         router.refresh();
@@ -203,19 +227,42 @@ export default function CategoryList({
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="w-96 rounded-2xl bg-white p-6 shadow-xl">
             <header className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold">카테고리 {editingCategory ? '수정' : '추가'}</h2>
-              <button onClick={closeAddForm} className="text-gray-400 hover:text-gray-600">✕</button>
+              <h2 className="text-lg font-bold">
+                카테고리 {editingCategory ? '수정' : '추가'}
+              </h2>
+              <button
+                onClick={closeAddForm}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
             </header>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label htmlFor="cat-name" className="text-sm font-medium text-gray-700">카테고리명</label>
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="cat-name"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    카테고리명
+                  </label>
+                  <span
+                    className={`text-xs ${categoryName.length >= CAT_NAME_MAX ? 'text-red-500 font-medium' : 'text-gray-400'}`}
+                  >
+                    {categoryName.length} / {CAT_NAME_MAX}
+                  </span>
+                </div>
                 <input
                   id="cat-name"
+                  maxLength={CAT_NAME_MAX}
                   className="rounded-lg border border-gray-300 px-3 py-2 focus:border-green-500 focus:outline-none"
                   onChange={(e) => setCategoryName(e.target.value)}
                   value={categoryName}
                   autoFocus
                 />
+                <p className="text-xs text-gray-400">
+                  키오스크 탭에 표시됩니다
+                </p>
               </div>
               <div className="flex justify-end gap-2">
                 <button
@@ -227,7 +274,9 @@ export default function CategoryList({
                 </button>
                 <button
                   type="submit"
-                  disabled={!categoryName}
+                  disabled={
+                    !categoryName.trim() || categoryName.length > CAT_NAME_MAX
+                  }
                   className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
                 >
                   저장
@@ -244,9 +293,16 @@ export default function CategoryList({
           <div className="w-96 rounded-2xl bg-white p-6 shadow-xl">
             <header className="mb-1 flex items-center justify-between">
               <h2 className="text-lg font-bold">카테고리 관리</h2>
-              <button onClick={closeManageModal} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button
+                onClick={closeManageModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
             </header>
-            <p className="mb-4 text-xs text-gray-400">드래그하여 순서를 변경할 수 있습니다.</p>
+            <p className="mb-4 text-xs text-gray-400">
+              드래그하여 순서를 변경할 수 있습니다.
+            </p>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -278,7 +334,19 @@ export default function CategoryList({
 
       {/* Tab bar */}
       <div className="flex items-center gap-2">
-        <div className="flex flex-1 flex-wrap items-center gap-1">
+        {/* Category tabs — mobile: select / desktop: button group */}
+        <select
+          value={selectedCategoryId}
+          onChange={(e) => onSelectCategory(Number(e.target.value))}
+          className="sm:hidden flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700"
+        >
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({menuCount(c.id)})
+            </option>
+          ))}
+        </select>
+        <div className="hidden sm:flex flex-1 flex-wrap items-center gap-1">
           {categories.map((c) => {
             const isActive = c.id === selectedCategoryId;
             return (
@@ -294,7 +362,9 @@ export default function CategoryList({
                 <span>{c.name}</span>
                 <span
                   className={`inline-flex h-5 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums ${
-                    isActive ? 'bg-green-500 text-green-100' : 'bg-gray-100 text-gray-500'
+                    isActive
+                      ? 'bg-green-500 text-green-100'
+                      : 'bg-gray-100 text-gray-500'
                   }`}
                 >
                   {menuCount(c.id)}
@@ -303,20 +373,31 @@ export default function CategoryList({
             );
           })}
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {categories.length >= CATEGORY_MAX && (
+            <span className="hidden sm:block text-xs text-amber-500">
+              최대 {CATEGORY_MAX}개
+            </span>
+          )}
           <button
             onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            disabled={categories.length >= CATEGORY_MAX}
+            title={
+              categories.length >= CATEGORY_MAX
+                ? `카테고리는 최대 ${CATEGORY_MAX}개까지 추가할 수 있습니다`
+                : undefined
+            }
+            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Plus size={15} />
-            Add
+            추가
           </button>
           <button
             onClick={() => setShowManageModal(true)}
             className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <SlidersHorizontal size={15} />
-            Manage
+            관리
           </button>
         </div>
       </div>
