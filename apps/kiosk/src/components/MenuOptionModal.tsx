@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { MenuOption } from '@kiosk/shared';
 import type { MenuWithOptions } from '../lib/api';
+import LazyImage from './LazyImage';
 
 interface Props {
   menu: MenuWithOptions;
@@ -45,11 +46,9 @@ export default function MenuOptionModal({ menu, onClose, onAdd }: Props) {
         {/* 메뉴 정보 */}
         <div className="flex gap-6 mb-10">
           {menu.image_url ? (
-            <img
-              src={menu.image_url}
-              alt={menu.name}
-              className="w-36 h-36 rounded-2xl object-cover flex-shrink-0"
-            />
+            <div className="w-36 h-36 rounded-2xl overflow-hidden flex-shrink-0">
+              <LazyImage src={menu.image_url} alt={menu.name} />
+            </div>
           ) : (
             <div className="w-36 h-36 rounded-2xl bg-gray-100 flex items-center justify-center flex-shrink-0 text-5xl">
               🍽️

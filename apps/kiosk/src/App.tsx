@@ -9,7 +9,14 @@ import OrderCompleteScreen from './screens/OrderCompleteScreen';
 
 type Screen = 'screensaver' | 'menu' | 'cart' | 'complete';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,   // 5분간 fresh 유지 → 화면 전환 시 불필요한 재fetch 방지
+      refetchOnWindowFocus: false,  // 윈도우 포커스 복귀 시 재fetch 안 함 (키오스크 특성상 불필요)
+    },
+  },
+});
 
 function KioskApp() {
   const [screen, setScreen] = useState<Screen>('screensaver');

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, type MenuWithOptions } from '../lib/api';
 import { useCartStore, calcTotal } from '../stores/cartStore';
 import MenuOptionModal from '../components/MenuOptionModal';
+import LazyImage from '../components/LazyImage';
 import type { MenuOption } from '@kiosk/shared';
 
 interface Props {
@@ -164,11 +165,7 @@ function MenuCard({ menu, onTap }: { menu: MenuWithOptions; onTap: () => void })
       {/* 이미지 */}
       <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
         {menu.image_url ? (
-          <img
-            src={menu.image_url}
-            alt={menu.name}
-            className="w-full h-full object-cover"
-          />
+          <LazyImage src={menu.image_url} alt={menu.name} />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-7xl text-gray-200">
             🍽️
