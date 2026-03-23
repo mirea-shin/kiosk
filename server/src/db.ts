@@ -69,7 +69,23 @@ export function initSchema(db: Database.Database) {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS screensaver_changelog (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT NOT NULL,
+      description TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      is_published INTEGER NOT NULL DEFAULT 0
+    );
   `)
+
+  // 기존 DB 마이그레이션: screensaver_config에 타임스탬프 컬럼 추가
+  for (const sql of [
+    `ALTER TABLE screensaver_config ADD COLUMN last_modified_at TEXT`,
+    `ALTER TABLE screensaver_config ADD COLUMN last_published_at TEXT`,
+  ]) {
+    try { db.exec(sql) } catch { /* 이미 존재하면 무시 */ }
+  }
 }
 
 export const db = new Database('kiosk.db')

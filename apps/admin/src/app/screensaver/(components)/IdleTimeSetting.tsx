@@ -1,58 +1,101 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
 
 import { API_URL } from '@/lib/api';
 import SectionCard from '@/components/SectionCard';
 import SectionHeader from '@/components/SectionHeader';
-import Button from '@/components/Button';
+import ConfirmDialog from '@/components/ConfirmDialog';
+
+type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function IdleTimeSetting({ value }: { value: number }) {
   const [editedIdleTime, setEditedIdleTime] = useState(value);
+  const [status, setStatus] = useState<Status>('idle');
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>) => {
-    setEditedIdleTime(Number(e.target.value));
-  };
-
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editedIdleTime || editedIdleTime < 0) return;
+    setShowConfirm(true);
+  };
 
-    await fetch(`${API_URL}/api/screensaver`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idle_timeout_seconds: editedIdleTime }),
-    });
+  const handleConfirm = async () => {
+    setShowConfirm(false);
+    setStatus('loading');
+    try {
+      const res = await fetch(`${API_URL}/api/screensaver`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idle_timeout_seconds: editedIdleTime }),
+      });
+      setStatus(res.ok ? 'success' : 'error');
+    } catch {
+      setStatus('error');
+    } finally {
+      setTimeout(() => setStatus('idle'), 3000);
+    }
   };
 
   return (
-    <SectionCard>
-      <SectionHeader
-        icon={<Clock size={20} />}
-        title="대기 시간 설정"
-        description="스크린세이버가 표시되기까지 키오스크가 대기하는 시간을 설정합니다"
-      />
-      <form onSubmit={handleSubmit}>
-        <div className="flex items-end gap-4">
-          <div className="flex-1 max-w-sm">
-            <label className="mb-1.5 block text-sm font-semibold text-gray-900">
-              대기 시간 (초)
-            </label>
-            <input
-              type="number"
-              min={0}
-              value={editedIdleTime}
-              onChange={handleTimeInputChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
-            />
-            <p className="mt-1.5 text-xs text-gray-400">권장: 30~120초</p>
+    <>
+      <SectionCard>
+        <SectionHeader
+          icon={<Clock size={20} />}
+          title="대기 시간 설정"
+          description="스크린세이버가 표시되기까지 키오스크가 대기하는 시간을 설정합니다"
+        />
+        <form onSubmit={handleSubmit}>
+          <div className="flex items-end gap-4">
+            <div className="flex-1 max-w-sm">
+              <label className="mb-1.5 block text-sm font-semibold text-gray-900">
+                대기 시간 (초)
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={editedIdleTime}
+                onChange={(e) => setEditedIdleTime(Number(e.target.value))}
+                disabled={status === 'loading'}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:opacity-50"
+              />
+              <p className="mt-1.5 text-xs text-gray-400">권장: 30~120초</p>
+            </div>
+            <button
+              type="submit"
+              disabled={status === 'loading'}
+              className="mb-6 flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {status === 'loading' && <Loader2 size={15} className="animate-spin" />}
+              저장
+            </button>
           </div>
-          <Button type="submit" className="mb-6">
-            저장
-          </Button>
-        </div>
-      </form>
-    </SectionCard>
+
+          {status === 'success' && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+              <CheckCircle2 size={15} />
+              대기 시간이 저장되었습니다.
+            </div>
+          )}
+          {status === 'error' && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-red-500">
+              <XCircle size={15} />
+              저장에 실패했습니다. 다시 시도해주세요.
+            </div>
+          )}
+        </form>
+      </SectionCard>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="대기 시간 변경"
+        description={`대기 시간을 ${editedIdleTime}초로 변경합니다. 키오스크에 즉시 반영됩니다.`}
+        confirmLabel="저장"
+        variant="primary"
+        onConfirm={handleConfirm}
+        onCancel={() => setShowConfirm(false)}
+      />
+    </>
   );
 }

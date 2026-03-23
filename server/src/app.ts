@@ -20,7 +20,7 @@ export function createApp(db: Database.Database, ws: WsManager) {
   app.route('/api/categories', categoriesRouter(db))
   app.route('/api/menus', menusRouter(db))
   app.route('/api/orders', ordersRouter(db, ws))
-  app.route('/api/screensaver', screensaverRouter(db))
+  app.route('/api/screensaver', screensaverRouter(db, ws))
   app.route('/api/demo', demoRouter(db))
 
   app.get('/health', (c) => c.json({ status: 'ok' }))

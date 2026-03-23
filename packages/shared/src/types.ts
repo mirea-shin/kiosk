@@ -70,3 +70,18 @@ export interface ScreensaverSyncResponse {
   idle_timeout_seconds: number;
   media: ScreensaverMedia[];
 }
+
+export interface ScreensaverChangelog {
+  id: number;
+  action: 'media_upload' | 'media_delete' | 'media_reorder' | 'duration_update';
+  description: string;
+  created_at: string;
+  is_published: boolean;
+}
+
+export interface ScreensaverAdminData extends ScreensaverSyncResponse {
+  last_modified_at: string | null;
+  last_published_at: string | null;
+  has_pending_changes: boolean;
+  pending_changes: ScreensaverChangelog[];
+}

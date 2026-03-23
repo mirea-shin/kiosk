@@ -3,7 +3,8 @@ import { randomUUID } from 'crypto';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import type Database from 'better-sqlite3';
-import type { ScreensaverConfig, ScreensaverMedia } from '@kiosk/shared';
+import type { ScreensaverChangelog, ScreensaverConfig, ScreensaverMedia } from '@kiosk/shared';
+import type { WsManager } from '../ws-manager.js';
 
 const UPLOADS_DIR = join(process.cwd(), 'uploads', 'screensaver');
 const ALLOWED_MIME: Record<string, 'image' | 'video'> = {
@@ -28,25 +29,55 @@ function getBaseUrl(c: { req: { url: string } }): string {
   return `${url.protocol}//${url.host}`;
 }
 
-export function screensaverRouter(db: Database.Database) {
+function markModified(
+  db: Database.Database,
+  action: ScreensaverChangelog['action'],
+  description: string,
+) {
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE screensaver_config SET last_modified_at = datetime('now') WHERE id = 1`,
+    ).run();
+    db.prepare(
+      `INSERT INTO screensaver_changelog (action, description) VALUES (?, ?)`,
+    ).run(action, description);
+  })();
+}
+
+type ChangelogRow = Omit<ScreensaverChangelog, 'is_published'> & { is_published: number };
+
+function toPendingChanges(db: Database.Database): ScreensaverChangelog[] {
+  const rows = db
+    .prepare(`SELECT * FROM screensaver_changelog WHERE is_published = 0 ORDER BY id ASC`)
+    .all() as ChangelogRow[];
+  return rows.map((r) => ({ ...r, is_published: r.is_published === 1 }));
+}
+
+export function screensaverRouter(db: Database.Database, ws: WsManager) {
   const app = new Hono();
 
-  // GET /api/screensaver — config + media list (키오스크 sync용)
+  // GET /api/screensaver — config + media list + 미적용 변경사항
   app.get('/', (c) => {
     const config = db
       .prepare('SELECT * FROM screensaver_config WHERE id = 1')
-      .get() as ScreensaverConfig;
+      .get() as ScreensaverConfig & {
+        last_modified_at: string | null;
+        last_published_at: string | null;
+      };
 
     const mediaRows = db
-      .prepare(
-        'SELECT * FROM screensaver_media ORDER BY sort_order ASC, id ASC',
-      )
+      .prepare('SELECT * FROM screensaver_media ORDER BY sort_order ASC, id ASC')
       .all() as Omit<ScreensaverMedia, 'url'>[];
 
+    const pendingChanges = toPendingChanges(db);
     const baseUrl = getBaseUrl(c);
 
     return c.json({
       idle_timeout_seconds: config.idle_timeout_seconds,
+      last_modified_at: config.last_modified_at ?? null,
+      last_published_at: config.last_published_at ?? null,
+      has_pending_changes: pendingChanges.length > 0,
+      pending_changes: pendingChanges,
       media: mediaRows.map((row) => toMediaResponse(row, baseUrl)),
     });
   });
@@ -65,6 +96,20 @@ export function screensaverRouter(db: Database.Database) {
       .prepare('SELECT * FROM screensaver_config WHERE id = 1')
       .get() as ScreensaverConfig;
     return c.json(config);
+  });
+
+  // POST /api/screensaver/publish — 현재 설정을 키오스크에 즉시 push
+  app.post('/publish', (c) => {
+    db.transaction(() => {
+      db.prepare(
+        `UPDATE screensaver_config SET last_published_at = datetime('now') WHERE id = 1`,
+      ).run();
+      db.prepare(
+        `UPDATE screensaver_changelog SET is_published = 1 WHERE is_published = 0`,
+      ).run();
+    })();
+    ws.broadcast('screensaver:sync', {});
+    return c.json({ ok: true });
   });
 
   // POST /api/screensaver/media — 파일 업로드 (multipart/form-data)
@@ -105,6 +150,8 @@ export function screensaverRouter(db: Database.Database) {
       .prepare('SELECT * FROM screensaver_media WHERE id = ?')
       .get(result.lastInsertRowid) as Omit<ScreensaverMedia, 'url'>;
 
+    markModified(db, 'media_upload', `미디어 추가: ${file.name}`);
+
     return c.json(toMediaResponse(row, getBaseUrl(c)), 201);
   });
 
@@ -115,14 +162,22 @@ export function screensaverRouter(db: Database.Database) {
     if (body.display_duration_seconds == null) {
       return c.json({ error: 'display_duration_seconds is required' }, 400);
     }
-    const updated = db
-      .prepare(
-        'UPDATE screensaver_media SET display_duration_seconds = ? WHERE id = ?',
-      )
-      .run(body.display_duration_seconds, id);
-    if (updated.changes === 0) {
+    const existing = db
+      .prepare('SELECT * FROM screensaver_media WHERE id = ?')
+      .get(id) as Omit<ScreensaverMedia, 'url'> | undefined;
+    if (!existing) {
       return c.json({ error: 'Not found' }, 404);
     }
+    db.prepare(
+      'UPDATE screensaver_media SET display_duration_seconds = ? WHERE id = ?',
+    ).run(body.display_duration_seconds, id);
+
+    markModified(
+      db,
+      'duration_update',
+      `재생 시간 변경: ${existing.original_name} → ${body.display_duration_seconds}초`,
+    );
+
     const row = db
       .prepare('SELECT * FROM screensaver_media WHERE id = ?')
       .get(id) as Omit<ScreensaverMedia, 'url'>;
@@ -146,6 +201,9 @@ export function screensaverRouter(db: Database.Database) {
       }
     });
     txn();
+
+    markModified(db, 'media_reorder', '재생 순서 변경');
+
     return c.json({ ok: true });
   });
 
@@ -160,9 +218,10 @@ export function screensaverRouter(db: Database.Database) {
     }
     db.prepare('DELETE FROM screensaver_media WHERE id = ?').run(id);
     const filePath = join(UPLOADS_DIR, row.filename);
-    await unlink(filePath).catch(() => {
-      // 파일이 이미 없어도 무시
-    });
+    await unlink(filePath).catch(() => {});
+
+    markModified(db, 'media_delete', `미디어 삭제: ${row.original_name}`);
+
     return c.json({ ok: true });
   });
 
