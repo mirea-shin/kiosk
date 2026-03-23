@@ -22,6 +22,7 @@ export interface Menu {
   is_available: boolean;
   sort_order: number;
   created_at: string;
+  options?: MenuOption[];
 }
 
 export interface MenuOption {
@@ -84,4 +85,10 @@ export interface ScreensaverAdminData extends ScreensaverSyncResponse {
   last_published_at: string | null;
   has_pending_changes: boolean;
   pending_changes: ScreensaverChangelog[];
+}
+
+export interface BrandingConfig {
+  id: number;
+  primary_color: string;
+  updated_at: string;
 }

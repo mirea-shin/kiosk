@@ -21,6 +21,17 @@ function KioskApp() {
     queryFn: api.screensaver,
   });
 
+  const { data: branding } = useQuery({
+    queryKey: ['branding'],
+    queryFn: api.branding,
+  });
+
+  useEffect(() => {
+    if (branding?.primary_color) {
+      document.documentElement.style.setProperty('--brand-primary', branding.primary_color);
+    }
+  }, [branding]);
+
   const idleTimeout = (screensaverData?.idle_timeout_seconds ?? 60) * 1000;
 
   // WebSocket: 어드민에서 "키오스크에 적용" 시 screensaver 데이터 즉시 갱신
@@ -31,6 +42,9 @@ function KioskApp() {
         const { event } = JSON.parse(e.data);
         if (event === 'screensaver:sync') {
           queryClient.invalidateQueries({ queryKey: ['screensaver'] });
+        }
+        if (event === 'branding:sync') {
+          queryClient.invalidateQueries({ queryKey: ['branding'] });
         }
       } catch {
         // ignore

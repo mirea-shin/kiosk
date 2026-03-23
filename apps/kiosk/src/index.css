@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+:root {
+  --brand-primary: #f97316;
+}
+
+.bg-brand { background-color: var(--brand-primary); }
+.text-brand { color: var(--brand-primary); }
+.border-brand { border-color: var(--brand-primary); }
+.bg-brand-light { background-color: color-mix(in srgb, var(--brand-primary) 12%, white); }
+.text-brand-dark { color: color-mix(in srgb, var(--brand-primary) 80%, black); }
+.text-brand-subtle { color: color-mix(in srgb, var(--brand-primary) 70%, white); }
+.active\:bg-brand-dark:active { background-color: color-mix(in srgb, var(--brand-primary) 85%, black); }
+
+@keyframes cart-toast {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.95); }
+  15%  { opacity: 1; transform: translateY(0) scale(1); }
+  75%  { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.97); }
+}
+.cart-toast {
+  animation: cart-toast 1.8s ease forwards;
+}
+
+@keyframes badge-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.45); }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.badge-pop {
+  animation: badge-pop 0.35s ease;
+}

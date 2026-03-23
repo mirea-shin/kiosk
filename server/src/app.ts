@@ -7,6 +7,7 @@ import { categoriesRouter } from './routes/categories.js'
 import { menusRouter } from './routes/menus.js'
 import { ordersRouter } from './routes/orders.js'
 import { screensaverRouter } from './routes/screensaver.js'
+import { brandingRouter } from './routes/branding.js'
 import { demoRouter } from './routes/demo.js'
 
 export function createApp(db: Database.Database, ws: WsManager) {
@@ -21,6 +22,7 @@ export function createApp(db: Database.Database, ws: WsManager) {
   app.route('/api/menus', menusRouter(db))
   app.route('/api/orders', ordersRouter(db, ws))
   app.route('/api/screensaver', screensaverRouter(db, ws))
+  app.route('/api/branding', brandingRouter(db, ws))
   app.route('/api/demo', demoRouter(db))
 
   app.get('/health', (c) => c.json({ status: 'ok' }))

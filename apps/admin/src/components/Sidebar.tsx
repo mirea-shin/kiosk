@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClipboardList, UtensilsCrossed, Monitor, X } from 'lucide-react';
+import { ClipboardList, UtensilsCrossed, Monitor, Palette, X } from 'lucide-react';
 import { useSidebarStore } from '@/lib/stores/sidebar';
 import { useNotificationStore } from '@/lib/stores/notifications';
 
@@ -10,6 +10,7 @@ const navItems = [
   { href: '/orders', label: '주문관리', icon: ClipboardList },
   { href: '/menu', label: '메뉴관리', icon: UtensilsCrossed },
   { href: '/screensaver', label: '화면관리', icon: Monitor },
+  { href: '/branding', label: '색상관리', icon: Palette },
 ];
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
