@@ -49,7 +49,8 @@ export function ordersRouter(db: Database.Database, ws: WsManager) {
       params.push(status);
     }
     if (date) {
-      conditions.push("date(created_at) = ?");
+      // created_at은 UTC 저장, date 파라미터는 KST 기준 → UTC+9 오프셋 적용해 비교
+      conditions.push("date(datetime(created_at, '+9 hours')) = ?");
       params.push(date);
     }
 

@@ -59,16 +59,24 @@ const ALL_STATUSES = Object.keys(STATUS_CONFIG) as OrderStatus[];
 
 // ── 유틸 ──────────────────────────────────────────────
 
-function todayDate(): string {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+function todayKSTDate(): string {
+  // 한국 시간(KST, UTC+9) 기준 오늘 날짜
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().slice(0, 10);
 }
 
 function isOrderFromToday(createdAt: string): boolean {
-  return createdAt.slice(0, 10) === todayDate();
+  // SQLite UTC 시간을 KST로 변환 후 오늘 날짜와 비교
+  const utc = new Date(createdAt.replace(' ', 'T') + 'Z');
+  const kst = new Date(utc.getTime() + 9 * 60 * 60 * 1000);
+  return kst.toISOString().slice(0, 10) === todayKSTDate();
 }
 
 function timeAgo(dateStr: string): string {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  // SQLite datetime('now')는 UTC를 'YYYY-MM-DD HH:MM:SS' 형식으로 반환
+  // new Date()는 T/Z 없으면 로컬 시간으로 파싱하므로 명시적으로 UTC 변환
+  const diff = Math.floor((Date.now() - new Date(dateStr.replace(' ', 'T') + 'Z').getTime()) / 1000);
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
@@ -239,7 +247,7 @@ export default function OrderList() {
 
   const fetchOrders = useCallback(() => {
     const params = new URLSearchParams();
-    if (dateMode === 'today') params.set('date', todayDate());
+    if (dateMode === 'today') params.set('date', todayKSTDate());
     fetch(`${API_URL}/api/orders?${params}`)
       .then((res) => res.json())
       .then(setAllOrders);
@@ -265,8 +273,21 @@ export default function OrderList() {
     <div>
       {/* Top bar: status tabs + date toggle */}
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-        {/* Status filter tabs */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Status filter — mobile: select / desktop: button group */}
+        <select
+          value={selectedStatus ?? ''}
+          onChange={(e) =>
+            setSelectedStatus(e.target.value === '' ? undefined : (e.target.value as OrderStatus))
+          }
+          className="sm:hidden rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700"
+        >
+          {STATUS_TABS.map((tab) => (
+            <option key={tab.label} value={tab.value ?? ''}>
+              {tab.label} ({tabCount(tab.value)})
+            </option>
+          ))}
+        </select>
+        <div className="hidden sm:flex items-center gap-2 flex-wrap">
           {STATUS_TABS.map((tab) => {
             const isActive = selectedStatus === tab.value;
             return (
