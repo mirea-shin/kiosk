@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import React from 'react';
 
 import PageHeader from '@/components/PageHeader';
-import OrderList from './(components)/OrderList';
+import OrderList from './_components/OrderList';
 
 export const metadata: Metadata = {
   title: '주문 관리',

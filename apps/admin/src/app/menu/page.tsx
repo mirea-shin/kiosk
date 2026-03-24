@@ -1,27 +1,18 @@
 import type { Metadata } from 'next';
 import React from 'react';
 
+import type { Category, Menu } from '@kiosk/shared';
+import { api } from '@/lib/api-client';
 import PageHeader from '@/components/PageHeader';
-import MenuManagement from './(components)/MenuManagement';
-
-import { API_URL } from '@/lib/api';
+import MenuManagement from './_components/MenuManagement';
 
 export const metadata: Metadata = {
   title: '메뉴 관리',
   description: 'Manage categories and menu items',
 };
 
-const getMenus = async () => {
-  const response = await fetch(`${API_URL}/api/menus`);
-  const data = await response.json();
-  return data;
-};
-
-const getCategories = async () => {
-  const response = await fetch(`${API_URL}/api/categories`);
-  const data = await response.json();
-  return data;
-};
+const getMenus = () => api.get<Menu[]>('/api/menus', { cache: 'no-store' });
+const getCategories = () => api.get<Category[]>('/api/categories', { cache: 'no-store' });
 
 export default async function MenuPage() {
   const [menus, categories] = await Promise.all([getMenus(), getCategories()]);

@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { CheckCircle2, Loader2, Palette, XCircle } from 'lucide-react';
-import { API_URL } from '@/lib/api';
+import { api } from '@/lib/api-client';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import SectionCard from '@/components/SectionCard';
 import SectionHeader from '@/components/SectionHeader';
-
-type Status = 'idle' | 'loading' | 'success' | 'error';
 
 const PRESETS = [
   { label: '오렌지', value: '#f97316' },
@@ -28,68 +27,38 @@ function KioskMockup({ color }: { color: string }) {
   return (
     <div className="flex flex-col items-center gap-2 flex-shrink-0 lg:self-start">
       <p className="text-xs font-medium text-gray-400">화면 미리보기</p>
-
-      {/* 디바이스 프레임 */}
       <div
         className="overflow-hidden rounded-2xl border-2 border-gray-200 bg-gray-50 shadow-lg flex flex-col"
         style={{ width: 200, height: 360 }}
       >
-        {/* 헤더 */}
         <div className="flex-shrink-0 bg-white border-b border-gray-100 flex items-center justify-between px-4 py-2.5">
           <span style={{ fontSize: 13, fontWeight: 900 }} className="text-gray-900">메뉴</span>
           <span style={{ fontSize: 8 }} className="text-gray-400">원하시는 메뉴를 선택하세요</span>
         </div>
-
-        {/* 카테고리 탭 */}
         <div className="flex-shrink-0 bg-white border-b border-gray-100 flex gap-1.5 px-2.5 py-1.5">
-          <div
-            style={{ backgroundColor: color, fontSize: 8 }}
-            className="rounded-full px-2 py-1 text-white font-semibold whitespace-nowrap"
-          >
-            패스트푸드
-          </div>
-          <div style={{ fontSize: 8 }} className="rounded-full px-2 py-1 bg-gray-100 text-gray-500 font-semibold whitespace-nowrap">
-            한식
-          </div>
-          <div style={{ fontSize: 8 }} className="rounded-full px-2 py-1 bg-gray-100 text-gray-500 font-semibold whitespace-nowrap">
-            음료
-          </div>
+          <div style={{ backgroundColor: color, fontSize: 8 }} className="rounded-full px-2 py-1 text-white font-semibold whitespace-nowrap">패스트푸드</div>
+          <div style={{ fontSize: 8 }} className="rounded-full px-2 py-1 bg-gray-100 text-gray-500 font-semibold whitespace-nowrap">한식</div>
+          <div style={{ fontSize: 8 }} className="rounded-full px-2 py-1 bg-gray-100 text-gray-500 font-semibold whitespace-nowrap">음료</div>
         </div>
-
-        {/* 메뉴 그리드 */}
         <div className="flex-1 p-2 grid grid-cols-2 gap-1.5 overflow-hidden">
           {MOCK_MENUS.map((menu, i) => (
             <div key={i} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-50">
-              <div className="bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '4/3', fontSize: 20 }}>
-                🍽️
-              </div>
+              <div className="bg-gray-100 flex items-center justify-center" style={{ aspectRatio: '4/3', fontSize: 20 }}>🍽️</div>
               <div className="px-1.5 py-1">
-                <div style={{ fontSize: 8, fontWeight: 700 }} className="text-gray-900 truncate">
-                  {menu.name}
-                </div>
-                <div style={{ fontSize: 9, fontWeight: 900, color }} className="mt-0.5">
-                  {menu.price}원
-                </div>
+                <div style={{ fontSize: 8, fontWeight: 700 }} className="text-gray-900 truncate">{menu.name}</div>
+                <div style={{ fontSize: 9, fontWeight: 900, color }} className="mt-0.5">{menu.price}원</div>
               </div>
             </div>
           ))}
         </div>
-
-        {/* 장바구니 바 */}
         <div className="flex-shrink-0 bg-gray-900 px-3 py-2.5 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <div
-              style={{ backgroundColor: color, width: 17, height: 17, fontSize: 8 }}
-              className="rounded-full text-white flex items-center justify-center font-bold flex-shrink-0"
-            >
-              3
-            </div>
+            <div style={{ backgroundColor: color, width: 17, height: 17, fontSize: 8 }} className="rounded-full text-white flex items-center justify-center font-bold flex-shrink-0">3</div>
             <span style={{ fontSize: 8 }} className="text-white font-semibold">장바구니 보기</span>
           </div>
           <span style={{ color, fontSize: 9 }} className="font-bold whitespace-nowrap">24,000원 →</span>
         </div>
       </div>
-
       <p style={{ fontSize: 10 }} className="text-gray-300">색상 변경 시 실시간 반영</p>
     </div>
   );
@@ -98,7 +67,7 @@ function KioskMockup({ color }: { color: string }) {
 export default function BrandingSettings({ primaryColor }: { primaryColor: string }) {
   const [color, setColor] = useState(primaryColor);
   const [hexInput, setHexInput] = useState(primaryColor);
-  const [status, setStatus] = useState<Status>('idle');
+  const { status, run } = useAsyncAction();
 
   const applyColor = (value: string) => {
     setColor(value);
@@ -107,25 +76,11 @@ export default function BrandingSettings({ primaryColor }: { primaryColor: strin
 
   const handleHexInput = (value: string) => {
     setHexInput(value);
-    if (/^#[0-9a-fA-F]{6}$/.test(value)) {
-      setColor(value);
-    }
+    if (/^#[0-9a-fA-F]{6}$/.test(value)) setColor(value);
   };
 
-  const handleSave = async () => {
-    setStatus('loading');
-    try {
-      const res = await fetch(`${API_URL}/api/branding`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ primary_color: color }),
-      });
-      setStatus(res.ok ? 'success' : 'error');
-    } catch {
-      setStatus('error');
-    } finally {
-      setTimeout(() => setStatus('idle'), 3000);
-    }
+  const handleSave = () => {
+    run(() => api.put('/api/branding', { primary_color: color }));
   };
 
   const isPreset = PRESETS.some((p) => p.value === color);
@@ -139,16 +94,13 @@ export default function BrandingSettings({ primaryColor }: { primaryColor: strin
       />
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-10">
-        {/* 설정 영역 */}
         <div className="flex-1 flex flex-col gap-6 min-w-0">
           {/* 프리셋 */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-gray-700">프리셋</p>
               {isPreset && (
-                <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">
-                  선택됨
-                </span>
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">선택됨</span>
               )}
             </div>
             <div className="flex gap-3 flex-wrap">
@@ -158,9 +110,7 @@ export default function BrandingSettings({ primaryColor }: { primaryColor: strin
                   <button
                     key={preset.value}
                     onClick={() => applyColor(preset.value)}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition-all hover:border-gray-400 ${
-                      active ? 'border-gray-800' : 'border-transparent'
-                    }`}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition-all hover:border-gray-400 ${active ? 'border-gray-800' : 'border-transparent'}`}
                   >
                     <div className="h-8 w-8 rounded-full shadow-sm" style={{ backgroundColor: preset.value }} />
                     <span className="text-xs text-gray-500">{preset.label}</span>
@@ -177,9 +127,7 @@ export default function BrandingSettings({ primaryColor }: { primaryColor: strin
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-gray-700">커스텀 색상</p>
               {!isPreset && (
-                <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">
-                  선택됨
-                </span>
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-600">선택됨</span>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -211,23 +159,19 @@ export default function BrandingSettings({ primaryColor }: { primaryColor: strin
               {status === 'loading' && <Loader2 size={15} className="animate-spin" />}
               저장 및 키오스크 적용
             </button>
-
             {status === 'success' && (
               <span className="flex items-center gap-1.5 text-sm text-green-600">
-                <CheckCircle2 size={15} />
-                키오스크에 반영되었습니다
+                <CheckCircle2 size={15} />키오스크에 반영되었습니다
               </span>
             )}
             {status === 'error' && (
               <span className="flex items-center gap-1.5 text-sm text-red-500">
-                <XCircle size={15} />
-                저장에 실패했습니다
+                <XCircle size={15} />저장에 실패했습니다
               </span>
             )}
           </div>
         </div>
 
-        {/* 키오스크 목업 */}
         <KioskMockup color={color} />
       </div>
     </SectionCard>

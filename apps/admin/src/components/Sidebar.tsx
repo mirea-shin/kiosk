@@ -7,7 +7,7 @@ import { ClipboardList, UtensilsCrossed, Monitor, Palette, RotateCcw, X } from '
 import { useSidebarStore } from '@/lib/stores/sidebar';
 import { useNotificationStore } from '@/lib/stores/notifications';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { API_URL } from '@/lib/api';
+import { api } from '@/lib/api-client';
 
 const navItems = [
   { href: '/orders', label: '주문관리', icon: ClipboardList },
@@ -26,13 +26,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      const res = await fetch(`${API_URL}/api/demo/refresh`, { method: 'POST' });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        console.error('[demo/refresh] 실패:', data);
-        return;
-      }
+      await api.post('/api/demo/refresh', {});
       router.refresh();
+    } catch (err) {
+      console.error('[demo/refresh] 실패:', err);
     } finally {
       setRefreshing(false);
       setShowRefreshConfirm(false);

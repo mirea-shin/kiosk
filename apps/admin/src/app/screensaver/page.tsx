@@ -1,23 +1,18 @@
 import type { Metadata } from 'next';
 import type { ScreensaverAdminData } from '@kiosk/shared';
-import { API_URL } from '@/lib/api';
+import { api } from '@/lib/api-client';
 import React from 'react';
 
 import PageHeader from '@/components/PageHeader';
-import IdleTimeSetting from './(components)/IdleTimeSetting';
-import MediaSetting from './(components)/MediaSetting';
+import IdleTimeSetting from './_components/IdleTimeSetting';
+import MediaSetting from './_components/MediaSetting';
 
 export const metadata: Metadata = {
   title: '화면 관리',
   description: 'Configure screensaver media and idle timeout settings',
 };
 
-const getScreenSaver = async (): Promise<ScreensaverAdminData> => {
-  const response = await fetch(`${API_URL}/api/screensaver`, {
-    cache: 'no-store',
-  });
-  return response.json();
-};
+const getScreenSaver = () => api.get<ScreensaverAdminData>('/api/screensaver', { cache: 'no-store' });
 
 export default async function ScreensaverPage() {
   const screenSaver = await getScreenSaver();

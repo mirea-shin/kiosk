@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ScreensaverChangelog, ScreensaverMedia } from '@kiosk/shared';
-
-import { API_URL } from '@/lib/api';
+import { api } from '@/lib/api-client';
+import { timeAgo } from '@/lib/date-utils';
 import SectionCard from '@/components/SectionCard';
 import SectionHeader from '@/components/SectionHeader';
 import Button from '@/components/Button';
@@ -19,37 +19,19 @@ const MAX_IMAGE_SIZE = 10 * 1024 * 1024;  // 10 MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
 const FILE_INFO = [
-  {
-    icon: ImageIcon,
-    label: '이미지',
-    formats: 'JPG · PNG · GIF · WebP',
-    limit: '최대 10 MB',
-  },
-  {
-    icon: Video,
-    label: '동영상',
-    formats: 'MP4 · WebM · MOV',
-    limit: '최대 100 MB',
-  },
+  { icon: ImageIcon, label: '이미지', formats: 'JPG · PNG · GIF · WebP', limit: '최대 10 MB' },
+  { icon: Video,     label: '동영상', formats: 'MP4 · WebM · MOV',       limit: '최대 100 MB' },
 ] as const;
 
 const ACTION_META: Record<
   ScreensaverChangelog['action'],
   { icon: React.ElementType; color: string; label: string }
 > = {
-  media_upload:  { icon: Plus,        color: 'text-green-500', label: '추가' },
-  media_delete:  { icon: X,           color: 'text-red-500',   label: '삭제' },
-  media_reorder: { icon: ArrowUpDown, color: 'text-blue-500',  label: '순서 변경' },
-  duration_update:{ icon: Clock,      color: 'text-amber-500', label: '시간 변경' },
+  media_upload:   { icon: Plus,        color: 'text-green-500', label: '추가' },
+  media_delete:   { icon: X,           color: 'text-red-500',   label: '삭제' },
+  media_reorder:  { icon: ArrowUpDown, color: 'text-blue-500',  label: '순서 변경' },
+  duration_update:{ icon: Clock,       color: 'text-amber-500', label: '시간 변경' },
 };
-
-function timeAgo(dateStr: string): string {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60) return `${diff}초 전`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-  return `${Math.floor(diff / 86400)}일 전`;
-}
 
 export default function MediaSetting({
   media,
@@ -94,30 +76,27 @@ export default function MediaSetting({
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch(`${API_URL}/api/screensaver/media`, { method: 'POST', body: formData });
-        if (!res.ok) failed++;
+        try {
+          await api.upload('/api/screensaver/media', formData);
+        } catch {
+          failed++;
+        }
       }
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
-      if (failed > 0) {
-        setUploadError(`${failed}개 파일 업로드에 실패했습니다. 다시 시도해주세요.`);
-      }
+      if (failed > 0) setUploadError(`${failed}개 파일 업로드에 실패했습니다. 다시 시도해주세요.`);
       router.refresh();
     },
     [router],
   );
 
   const handleDelete = async (id: number) => {
-    await fetch(`${API_URL}/api/screensaver/media/${id}`, { method: 'DELETE' });
+    await api.delete(`/api/screensaver/media/${id}`);
     router.refresh();
   };
 
   const handleUpdateDuration = async (id: number, seconds: number) => {
-    await fetch(`${API_URL}/api/screensaver/media/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ display_duration_seconds: seconds }),
-    });
+    await api.patch(`/api/screensaver/media/${id}`, { display_duration_seconds: seconds });
     router.refresh();
   };
 
@@ -127,22 +106,15 @@ export default function MediaSetting({
     if (swapIdx < 0 || swapIdx >= media.length) return;
 
     const orders = media.map((m) => ({ id: m.id, sort_order: m.sort_order }));
-    const temp = orders[idx].sort_order;
-    orders[idx].sort_order = orders[swapIdx].sort_order;
-    orders[swapIdx].sort_order = temp;
-
-    await fetch(`${API_URL}/api/screensaver/media/reorder`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orders }),
-    });
+    [orders[idx].sort_order, orders[swapIdx].sort_order] = [orders[swapIdx].sort_order, orders[idx].sort_order];
+    await api.put('/api/screensaver/media/reorder', { orders });
     router.refresh();
   };
 
   const handlePublish = async () => {
     setPublishing(true);
     try {
-      await fetch(`${API_URL}/api/screensaver/publish`, { method: 'POST' });
+      await api.post('/api/screensaver/publish', {});
       router.refresh();
     } finally {
       setPublishing(false);
@@ -197,7 +169,6 @@ export default function MediaSetting({
           onChange={(e) => handleUpload(e.target.files)}
         />
 
-        {/* 파일 형식 및 용량 안내 */}
         <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1.5 rounded-lg bg-gray-50 px-4 py-3">
           {FILE_INFO.map(({ icon: Icon, label, formats, limit }) => (
             <div key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -239,10 +210,8 @@ export default function MediaSetting({
           <p className="mt-3 text-xs text-gray-400">{media.length}개 파일</p>
         )}
 
-        {/* 미적용 변경사항 배너 */}
         {hasPendingChanges && (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50">
-            {/* 배너 헤더 */}
             <button
               onClick={() => setChangelogExpanded((v) => !v)}
               className="flex w-full items-center justify-between gap-4 px-4 py-3"
@@ -251,9 +220,7 @@ export default function MediaSetting({
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-xs font-bold text-white">
                   {pendingChanges.length}
                 </span>
-                <p className="text-sm font-medium text-amber-900">
-                  미적용 변경사항이 있습니다
-                </p>
+                <p className="text-sm font-medium text-amber-900">미적용 변경사항이 있습니다</p>
               </div>
               <ChevronRight
                 size={16}
@@ -261,7 +228,6 @@ export default function MediaSetting({
               />
             </button>
 
-            {/* 변경사항 목록 */}
             {changelogExpanded && (
               <div className="border-t border-amber-200 px-4 pb-3 pt-2">
                 <ul className="space-y-2">
@@ -279,7 +245,6 @@ export default function MediaSetting({
                     );
                   })}
                 </ul>
-
                 <button
                   onClick={() => setShowPublishConfirm(true)}
                   disabled={publishing}
@@ -331,25 +296,13 @@ function MediaItem({
       : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
   const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const handleSave = () => {
-    onUpdateDuration(item.id, duration);
-    setEditing(false);
-  };
-
-  const handleCancel = () => {
-    setDuration(item.display_duration_seconds);
-    setEditing(false);
-  };
+  const handleSave = () => { onUpdateDuration(item.id, duration); setEditing(false); };
+  const handleCancel = () => { setDuration(item.display_duration_seconds); setEditing(false); };
 
   return (
     <li className="flex items-center gap-4 px-4 py-3">
-      {/* 순서 조정 버튼 */}
       <div className="flex shrink-0 flex-col">
         <button
           onClick={() => onReorder(item.id, 'up')}
@@ -369,7 +322,6 @@ function MediaItem({
         </button>
       </div>
 
-      {/* 썸네일 */}
       <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
         {item.file_type === 'image' ? (
           <img src={item.url} alt={item.original_name} className="h-full w-full object-cover" />
@@ -378,24 +330,18 @@ function MediaItem({
         )}
       </div>
 
-      {/* 파일 정보 */}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-gray-900">{item.original_name}</p>
         <div className="mt-1 flex items-center gap-2">
           {item.file_type === 'image' ? (
-            <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-              이미지
-            </span>
+            <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">이미지</span>
           ) : (
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-              동영상
-            </span>
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">동영상</span>
           )}
           <span className="text-xs text-gray-400">{formatSize(item.file_size)}</span>
           <span className="text-xs text-gray-400">{formatDate(item.created_at)}</span>
         </div>
 
-        {/* 재생 시간 편집 */}
         <div className="mt-1.5 flex items-center gap-1">
           {editing ? (
             <>
@@ -406,18 +352,11 @@ function MediaItem({
                 onChange={(e) => setDuration(Number(e.target.value))}
                 className="w-14 rounded border border-gray-300 px-1.5 py-0.5 text-xs outline-none focus:border-green-500"
                 autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSave();
-                  if (e.key === 'Escape') handleCancel();
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }}
               />
               <span className="text-xs text-gray-400">초</span>
-              <button onClick={handleSave} className="ml-1 text-xs text-green-600 hover:text-green-700">
-                저장
-              </button>
-              <button onClick={handleCancel} className="text-xs text-gray-400 hover:text-gray-600">
-                취소
-              </button>
+              <button onClick={handleSave} className="ml-1 text-xs text-green-600 hover:text-green-700">저장</button>
+              <button onClick={handleCancel} className="text-xs text-gray-400 hover:text-gray-600">취소</button>
             </>
           ) : (
             <button
@@ -430,7 +369,6 @@ function MediaItem({
         </div>
       </div>
 
-      {/* 삭제 */}
       <button
         onClick={() => onDelete(item.id)}
         className="shrink-0 text-red-400 hover:text-red-600"

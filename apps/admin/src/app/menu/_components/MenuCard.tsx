@@ -32,9 +32,7 @@ export default function MenuCard({
           : 'border-gray-200'
       }`}
     >
-      {/* Content */}
       <div className="flex gap-3 p-4">
-        {/* Image placeholder */}
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-gray-100">
           {image_url ? (
             <img src={image_url} alt={name} className="h-full w-full rounded-xl object-cover" />
@@ -43,7 +41,6 @@ export default function MenuCard({
           )}
         </div>
 
-        {/* Info */}
         <div className="flex h-20 flex-1 flex-col justify-between min-w-0">
           <div>
             <div className="mb-1 flex items-start justify-between gap-2">
