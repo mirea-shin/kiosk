@@ -63,6 +63,7 @@ export default function MediaSetting({
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [sizeError, setSizeError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -87,13 +88,20 @@ export default function MediaSetting({
         return;
       }
 
+      setUploadError(null);
       setUploading(true);
+      let failed = 0;
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append('file', file);
-        await fetch(`${API_URL}/api/screensaver/media`, { method: 'POST', body: formData });
+        const res = await fetch(`${API_URL}/api/screensaver/media`, { method: 'POST', body: formData });
+        if (!res.ok) failed++;
       }
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (failed > 0) {
+        setUploadError(`${failed}개 파일 업로드에 실패했습니다. 다시 시도해주세요.`);
+      }
       router.refresh();
     },
     [router],
@@ -204,6 +212,9 @@ export default function MediaSetting({
 
         {sizeError && (
           <p className="mb-3 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{sizeError}</p>
+        )}
+        {uploadError && (
+          <p className="mb-3 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-600">{uploadError}</p>
         )}
 
         {media.length === 0 ? (

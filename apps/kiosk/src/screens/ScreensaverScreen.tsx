@@ -47,6 +47,7 @@ export default function ScreensaverScreen({ media, onWake }: Props) {
           src={current.url}
           alt=""
           className="w-full h-full object-cover"
+          onError={advance}
         />
       ) : (
         <video
@@ -57,6 +58,7 @@ export default function ScreensaverScreen({ media, onWake }: Props) {
           muted
           playsInline
           onEnded={advance}
+          onError={advance}
         />
       )}
 

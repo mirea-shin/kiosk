@@ -42,22 +42,54 @@ function KioskApp() {
   const idleTimeout = (screensaverData?.idle_timeout_seconds ?? 60) * 1000;
 
   // WebSocket: 어드민에서 "키오스크에 적용" 시 screensaver 데이터 즉시 갱신
+  // 연결 끊김 시 exponential backoff로 자동 재연결
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:3001/ws');
-    ws.onmessage = (e) => {
-      try {
-        const { event } = JSON.parse(e.data);
-        if (event === 'screensaver:sync') {
-          queryClient.invalidateQueries({ queryKey: ['screensaver'] });
+    let ws: WebSocket;
+    let retryCount = 0;
+    let retryTimer: ReturnType<typeof setTimeout>;
+    let unmounted = false;
+
+    const connect = () => {
+      ws = new WebSocket('ws://localhost:3001/ws');
+
+      ws.onmessage = (e) => {
+        try {
+          const { event } = JSON.parse(e.data);
+          if (event === 'screensaver:sync') {
+            queryClient.invalidateQueries({ queryKey: ['screensaver'] });
+          }
+          if (event === 'branding:sync') {
+            queryClient.invalidateQueries({ queryKey: ['branding'] });
+          }
+        } catch {
+          // ignore
         }
-        if (event === 'branding:sync') {
-          queryClient.invalidateQueries({ queryKey: ['branding'] });
-        }
-      } catch {
-        // ignore
-      }
+      };
+
+      ws.onopen = () => {
+        retryCount = 0; // 연결 성공 시 재시도 카운터 초기화
+      };
+
+      ws.onclose = () => {
+        if (unmounted) return;
+        // exponential backoff: 1s → 2s → 4s → 8s → 최대 30s
+        const delay = Math.min(1000 * 2 ** retryCount, 30000);
+        retryCount++;
+        retryTimer = setTimeout(connect, delay);
+      };
+
+      ws.onerror = () => {
+        ws.close(); // onclose에서 재연결 처리
+      };
     };
-    return () => ws.close();
+
+    connect();
+
+    return () => {
+      unmounted = true;
+      clearTimeout(retryTimer);
+      ws?.close();
+    };
   }, []);
 
   const goToScreensaver = useCallback(() => {

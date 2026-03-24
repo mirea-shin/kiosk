@@ -16,7 +16,7 @@ export default function MenuScreen({ onGoCart }: Props) {
   const [toast, setToast] = useState<{ name: string; key: number } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isError: isCatError, refetch: refetchCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: api.categories,
   });
@@ -27,7 +27,7 @@ export default function MenuScreen({ onGoCart }: Props) {
     }
   }, [categories, selectedCategoryId]);
 
-  const { data: menus = [], isLoading } = useQuery({
+  const { data: menus = [], isLoading, isError: isMenuError, refetch: refetchMenus } = useQuery({
     queryKey: ['menus', selectedCategoryId],
     queryFn: () => api.menus(selectedCategoryId ?? undefined),
     enabled: selectedCategoryId !== null,
@@ -90,7 +90,18 @@ export default function MenuScreen({ onGoCart }: Props) {
 
       {/* 메뉴 그리드 */}
       <div className="flex-1 overflow-y-auto p-6">
-        {isLoading ? (
+        {isCatError || isMenuError ? (
+          <div className="flex flex-col items-center justify-center h-full gap-8 text-gray-400">
+            <span className="text-8xl">⚠️</span>
+            <p className="text-3xl font-bold text-gray-500">메뉴를 불러오지 못했습니다</p>
+            <button
+              onClick={() => { refetchCategories(); refetchMenus(); }}
+              className="px-12 py-5 bg-brand text-white text-2xl font-bold rounded-2xl active:bg-brand-dark"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : isLoading ? (
           <div className="grid grid-cols-2 gap-5">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-gray-100 rounded-3xl animate-pulse h-[500px]" />

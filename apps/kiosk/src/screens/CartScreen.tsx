@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Loader2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCartStore, calcTotal } from '../stores/cartStore';
 
@@ -13,6 +14,7 @@ export default function CartScreen({ onBack, onOrderComplete }: Props) {
   const removeItem = useCartStore((s) => s.removeItem);
   const clear = useCartStore((s) => s.clear);
   const [loading, setLoading] = useState(false);
+  const [orderError, setOrderError] = useState(false);
   const [clearConfirm, setClearConfirm] = useState(false);
   const clearTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -31,6 +33,7 @@ export default function CartScreen({ onBack, onOrderComplete }: Props) {
 
   const handleOrder = async () => {
     setLoading(true);
+    setOrderError(false);
     try {
       const orderItems = items.map((item) => ({
         menu_id: item.menu.id,
@@ -40,15 +43,31 @@ export default function CartScreen({ onBack, onOrderComplete }: Props) {
       const order = await api.createOrder(orderItems);
       clear();
       onOrderComplete(order.id);
-    } catch (err) {
-      console.error('주문 실패:', err);
+    } catch {
+      setOrderError(true);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50">
+    <div className="w-full h-full flex flex-col bg-gray-50 relative">
+      {/* 주문 실패 모달 */}
+      {orderError && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-3xl px-14 py-12 mx-10 flex flex-col items-center gap-6 shadow-2xl">
+            <span className="text-7xl">⚠️</span>
+            <p className="text-3xl font-bold text-gray-900 text-center">주문에 실패했습니다</p>
+            <p className="text-xl text-gray-400 text-center">잠시 후 다시 시도해주세요</p>
+            <button
+              onClick={() => setOrderError(false)}
+              className="mt-2 px-14 py-5 bg-brand text-white text-2xl font-bold rounded-2xl active:bg-brand-dark"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
       {/* 헤더 */}
       <header className="bg-white px-10 py-7 border-b border-gray-100 flex items-center gap-5 flex-shrink-0">
         <button
@@ -157,8 +176,9 @@ export default function CartScreen({ onBack, onOrderComplete }: Props) {
         <button
           onClick={handleOrder}
           disabled={items.length === 0 || loading}
-          className="w-full py-8 bg-brand active:bg-brand-dark text-white text-4xl font-black rounded-3xl disabled:opacity-40 transition-colors"
+          className="w-full py-8 bg-brand active:bg-brand-dark text-white text-4xl font-black rounded-3xl disabled:opacity-40 transition-colors flex items-center justify-center gap-4"
         >
+          {loading && <Loader2 size={36} className="animate-spin" />}
           {loading ? '주문 중...' : '주문하기'}
         </button>
       </div>
