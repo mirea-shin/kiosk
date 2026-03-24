@@ -3,5 +3,5 @@ builder = "nixpacks"
 buildCommand = "pnpm install --frozen-lockfile && pnpm --filter @kiosk/server build"
 
 [deploy]
-startCommand = "node server/dist/index.js"
+startCommand = "NODE_OPTIONS='--env-file-if-exists=server/.env' node server/dist/index.js"
 restartPolicyType = "on_failure"
