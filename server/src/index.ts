@@ -33,7 +33,7 @@ app.get(
 const server = serve(
   {
     fetch: app.fetch,
-    port: 3001,
+    port: Number(process.env.PORT) || 3001,
   },
   (info) => {
     console.log(`Server running at http://localhost:${info.port}`)

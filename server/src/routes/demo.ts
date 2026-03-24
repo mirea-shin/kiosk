@@ -56,7 +56,7 @@ export function demoRouter(db: Database.Database, ws: WsManager) {
     const cat2 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('사이드', 1)
     const cat3 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('음료', 2)
 
-    const IMG = 'http://localhost:3001/uploads/menus'
+    const IMG = `${process.env.PUBLIC_URL ?? 'http://localhost:3001'}/uploads/menus`
     const menu1 = db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(cat1.lastInsertRowid, '클래식 버거', '클래식 소고기 패티 버거', 8900, `${IMG}/abb29420-b622-4fb4-a144-cf88b1326200.jpg`, 1, 0)

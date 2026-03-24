@@ -5,7 +5,10 @@
     "dev:all": "concurrently \"pnpm kiosk:dev\" \"pnpm admin:dev\" \"pnpm server:dev\"",
     "kiosk:dev": "pnpm --filter @kiosk/kiosk dev",
     "admin:dev": "pnpm --filter @kiosk/admin dev",
-    "server:dev": "pnpm --filter @kiosk/server dev"
+    "server:dev": "pnpm --filter @kiosk/server dev",
+    "build": "pnpm server:build && pnpm admin:build",
+    "server:build": "pnpm --filter @kiosk/server build",
+    "admin:build": "pnpm --filter @kiosk/admin build"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

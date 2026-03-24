@@ -42,11 +42,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 5. 플랫폼에 맞는 설치 파일 빌드
+      # 5. 태그에서 버전 추출 후 package.json에 반영
+      - name: Set version from tag
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          pnpm --filter @kiosk/kiosk exec npm version $VERSION --no-git-tag-version
+
+      # 6. 플랫폼에 맞는 설치 파일 빌드
       - name: Build kiosk package
         run: pnpm --filter @kiosk/kiosk package:${{ matrix.platform }}
 
-      # 6. 빌드 결과물을 GitHub Release에 업로드
+      # 7. 빌드 결과물을 GitHub Release에 업로드
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:

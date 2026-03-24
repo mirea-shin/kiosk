@@ -13,7 +13,8 @@ const debouncedNotify = debounce(() => {
 function connect() {
   if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) return;
 
-  ws = new WebSocket('ws://localhost:3001/ws');
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  ws = new WebSocket(apiUrl.replace(/^http/, 'ws') + '/ws');
 
   ws.onmessage = (e) => {
     try {

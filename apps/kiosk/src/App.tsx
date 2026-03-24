@@ -50,7 +50,8 @@ function KioskApp() {
     let unmounted = false;
 
     const connect = () => {
-      ws = new WebSocket('ws://localhost:3001/ws');
+      const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+      ws = new WebSocket(apiUrl.replace(/^http/, 'ws') + '/ws');
 
       ws.onmessage = (e) => {
         try {

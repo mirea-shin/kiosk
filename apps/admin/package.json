@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "dev": "NODE_OPTIONS='--env-file=../../.env' next dev",
+    "build": "NODE_OPTIONS='--env-file=../../.env' next build",
+    "start": "NODE_OPTIONS='--env-file=../../.env' next start"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

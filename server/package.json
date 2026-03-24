@@ -4,13 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "NODE_OPTIONS='--env-file=../.env' tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "NODE_OPTIONS='--env-file=../.env' node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "tsx src/seed.ts",
-    "seed:orders": "tsx src/seed-orders.ts"
+    "seed": "NODE_OPTIONS='--env-file=../.env' tsx src/seed.ts",
+    "seed:orders": "NODE_OPTIONS='--env-file=../.env' tsx src/seed-orders.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1",

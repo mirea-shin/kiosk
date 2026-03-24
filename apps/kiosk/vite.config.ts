@@ -13,6 +13,7 @@ export default defineConfig({
       '@kiosk/shared': path.resolve(__dirname, '../../packages/shared/src/types.ts'),
     },
   },
+  envDir: '../../',
   base: './',
   build: {
     outDir: 'dist/renderer',
