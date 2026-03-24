@@ -77,12 +77,12 @@ function timeAgo(dateStr: string): string {
   // SQLite datetime('now')는 UTC를 'YYYY-MM-DD HH:MM:SS' 형식으로 반환
   // new Date()는 T/Z 없으면 로컬 시간으로 파싱하므로 명시적으로 UTC 변환
   const diff = Math.floor((Date.now() - new Date(dateStr.replace(' ', 'T') + 'Z').getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
-  if (diff < 31536000) return `${Math.floor(diff / 2592000)}mo ago`;
-  return `${Math.floor(diff / 31536000)}y ago`;
+  if (diff < 60) return `${diff}초 전`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}일 전`;
+  if (diff < 31536000) return `${Math.floor(diff / 2592000)}개월 전`;
+  return `${Math.floor(diff / 31536000)}년 전`;
 }
 
 function formatPrice(price: number): string {

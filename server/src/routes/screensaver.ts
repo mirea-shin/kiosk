@@ -5,8 +5,9 @@ import { join } from 'path';
 import type Database from 'better-sqlite3';
 import type { ScreensaverChangelog, ScreensaverConfig, ScreensaverMedia } from '@kiosk/shared';
 import type { WsManager } from '../ws-manager.js';
+import { UPLOAD_DIR } from '../paths.js';
 
-const UPLOADS_DIR = join(process.cwd(), 'uploads', 'screensaver');
+const UPLOADS_DIR = join(UPLOAD_DIR, 'screensaver');
 const ALLOWED_MIME: Record<string, 'image' | 'video'> = {
   'image/jpeg': 'image',
   'image/png': 'image',

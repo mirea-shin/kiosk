@@ -8,6 +8,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1080,
     height: 1920,
+    fullscreen: !isDev,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,

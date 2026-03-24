@@ -6,9 +6,10 @@ import { db, initSchema } from './db.js'
 import { wsManager } from './ws-manager.js'
 import { createApp } from './app.js'
 import { seedDailyOrders } from './seed-daily.js'
+import { UPLOAD_DIR } from './paths.js'
 
-await mkdir(join(process.cwd(), 'uploads', 'screensaver'), { recursive: true })
-await mkdir(join(process.cwd(), 'uploads', 'menus'), { recursive: true })
+await mkdir(join(UPLOAD_DIR, 'screensaver'), { recursive: true })
+await mkdir(join(UPLOAD_DIR, 'menus'), { recursive: true })
 
 initSchema(db)
 seedDailyOrders(db)

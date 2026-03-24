@@ -11,11 +11,15 @@
     "build": "pnpm build:renderer && pnpm build:main",
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.node.json",
-    "package": "pnpm build && electron-builder"
+    "package": "pnpm build && electron-builder",
+    "package:mac": "pnpm build && electron-builder --mac",
+    "package:win": "pnpm build && electron-builder --win",
+    "package:linux": "pnpm build && electron-builder --linux"
   },
   "dependencies": {
     "@kiosk/shared": "workspace:*",
     "@tanstack/react-query": "^5",
+    "lucide-react": "^0.577.0",
     "react": "^19",
     "react-dom": "^19",
     "zustand": "^5"
@@ -36,9 +40,20 @@
   "build": {
     "appId": "com.kiosk.app",
     "productName": "Kiosk",
-    "files": ["dist/**/*"],
+    "files": [
+      "dist/**/*"
+    ],
     "directories": {
       "output": "release"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
     }
   }
 }

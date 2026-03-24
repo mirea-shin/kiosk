@@ -4,8 +4,9 @@ import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import type Database from 'better-sqlite3'
 import type { Menu, MenuOption } from '@kiosk/shared'
+import { UPLOAD_DIR } from '../paths.js'
 
-const UPLOADS_DIR = join(process.cwd(), 'uploads', 'menus')
+const UPLOADS_DIR = join(UPLOAD_DIR, 'menus')
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const MAX_SIZE = 10 * 1024 * 1024 // 10 MB
 
