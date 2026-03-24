@@ -51,6 +51,8 @@ jobs:
 
       # 6. 플랫폼에 맞는 설치 파일 빌드
       - name: Build kiosk package
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: pnpm --filter @kiosk/kiosk package:${{ matrix.platform }}
 
       # 7. 빌드 결과물을 GitHub Release에 업로드
