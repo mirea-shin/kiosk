@@ -4,9 +4,21 @@ import { join } from 'path'
 import type Database from 'better-sqlite3'
 import type { WsManager } from '../ws-manager.js'
 import { initSchema } from '../db.js'
+import { SERVER_DIR, UPLOAD_DIR } from '../paths.js'
 
-const UPLOADS_DIR = join(process.cwd(), 'uploads', 'screensaver')
-const SEEDS_DIR = join(process.cwd(), 'seeds', 'screensaver')
+const UPLOADS_DIR = join(UPLOAD_DIR, 'screensaver')
+const SEEDS_DIR = join(SERVER_DIR, 'seeds', 'screensaver')
+const MENU_UPLOADS_DIR = join(UPLOAD_DIR, 'menus')
+const MENU_SEEDS_DIR = join(SERVER_DIR, 'seeds', 'menus')
+
+const MENU_SEEDS = [
+  'classic-burger.jpg',
+  'cheese-burger.jpg',
+  'fries.jpg',
+  'onion-rings.jpg',
+  'cola.jpg',
+  'orange-juice.jpg',
+] as const
 
 const SCREENSAVER_SEEDS = [
   { filename: '465e2653-1a58-45eb-92b1-fea05f0aa8ca.jpg', original_name: 'amin-ramezani-hs75Yb9uaK8-unsplash.jpg', file_type: 'image', file_size: 2048020, display_duration_seconds: 5, sort_order: 0 },
@@ -56,32 +68,43 @@ export function demoRouter(db: Database.Database, ws: WsManager) {
     const cat2 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('사이드', 1)
     const cat3 = db.prepare('INSERT INTO categories (name, sort_order) VALUES (?, ?)').run('음료', 2)
 
-    const IMG = `${process.env.PUBLIC_URL ?? 'http://localhost:3001'}/uploads/menus`
+    const BASE = process.env.PUBLIC_URL ?? 'http://localhost:3001'
+    const IMG = (name: string) => `${BASE}/uploads/menus/${name}`
     const menu1 = db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(cat1.lastInsertRowid, '클래식 버거', '클래식 소고기 패티 버거', 8900, `${IMG}/abb29420-b622-4fb4-a144-cf88b1326200.jpg`, 1, 0)
+    ).run(cat1.lastInsertRowid, '클래식 버거', '클래식 소고기 패티 버거', 8900, IMG('classic-burger.jpg'), 1, 0)
     const menu2 = db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(cat1.lastInsertRowid, '치즈 버거', '치즈가 듬뿍 들어간 버거', 9900, `${IMG}/262e2f38-42cf-416f-99b1-ba0b155eb59e.jpg`, 1, 1)
+    ).run(cat1.lastInsertRowid, '치즈 버거', '치즈가 듬뿍 들어간 버거', 9900, IMG('cheese-burger.jpg'), 1, 1)
     const menu3 = db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(cat2.lastInsertRowid, '감자튀김', '바삭한 황금빛 감자튀김', 3500, `${IMG}/05771055-1da6-47cd-8e11-aac7c8c695a0.jpg`, 1, 0)
+    ).run(cat2.lastInsertRowid, '감자튀김', '바삭한 황금빛 감자튀김', 3500, IMG('fries.jpg'), 1, 0)
     db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(cat2.lastInsertRowid, '어니언링', '바삭한 어니언링', 4000, `${IMG}/f42e346e-b455-45d6-a4da-f291357b4cfc.jpg`, 1, 1)
+    ).run(cat2.lastInsertRowid, '어니언링', '바삭한 어니언링', 4000, IMG('onion-rings.jpg'), 1, 1)
     db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(cat3.lastInsertRowid, '콜라', '시원한 콜라', 2000, `${IMG}/9b8fd734-d002-4dde-9bb4-4e1a6fa7dc4e.jpg`, 1, 0)
+    ).run(cat3.lastInsertRowid, '콜라', '시원한 콜라', 2000, IMG('cola.jpg'), 1, 0)
     db.prepare(
       'INSERT INTO menus (category_id, name, description, price, image_url, is_available, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(cat3.lastInsertRowid, '오렌지 주스', '신선한 오렌지 주스', 2500, `${IMG}/7e8a290a-b001-4b09-b0cc-d8611a883e0c.jpg`, 1, 1)
+    ).run(cat3.lastInsertRowid, '오렌지 주스', '신선한 오렌지 주스', 2500, IMG('orange-juice.jpg'), 1, 1)
 
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu1.lastInsertRowid, '패티 추가', 2000)
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu1.lastInsertRowid, '치즈 추가', 500)
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu2.lastInsertRowid, '더블 패티', 3000)
     db.prepare('INSERT INTO menu_options (menu_id, name, price) VALUES (?, ?, ?)').run(menu3.lastInsertRowid, '라지 업그레이드', 500)
 
-    // 4. 씨드 스크린세이버 파일 복사 + DB 재삽입
+    // 4. 씨드 메뉴 이미지 복사
+    try {
+      await mkdir(MENU_UPLOADS_DIR, { recursive: true })
+      for (const filename of MENU_SEEDS) {
+        await copyFile(join(MENU_SEEDS_DIR, filename), join(MENU_UPLOADS_DIR, filename))
+      }
+    } catch (err) {
+      console.error('[demo/refresh] 메뉴 이미지 씨드 복원 실패:', err)
+    }
+
+    // 5. 씨드 스크린세이버 파일 복사 + DB 재삽입
     try {
       await mkdir(UPLOADS_DIR, { recursive: true })
       for (const seed of SCREENSAVER_SEEDS) {
