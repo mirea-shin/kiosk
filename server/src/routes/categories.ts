@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
 import type Database from 'better-sqlite3'
 import type { Category } from '@kiosk/shared'
+import type { WsManager } from '../ws-manager.js'
 
-export function categoriesRouter(db: Database.Database) {
+export function categoriesRouter(db: Database.Database, ws: WsManager) {
   const app = new Hono()
 
   app.get('/', (c) => {
@@ -21,6 +22,7 @@ export function categoriesRouter(db: Database.Database) {
     const row = db
       .prepare('SELECT * FROM categories WHERE id = ?')
       .get(result.lastInsertRowid) as Category
+    ws.broadcast('menu:sync', {})
     return c.json(row, 201)
   })
 
@@ -32,6 +34,7 @@ export function categoriesRouter(db: Database.Database) {
       for (const item of items) update.run(item.sort_order, item.id)
     })
     updateAll(body)
+    ws.broadcast('menu:sync', {})
     return c.json({ success: true })
   })
 
@@ -44,6 +47,7 @@ export function categoriesRouter(db: Database.Database) {
       'UPDATE categories SET name = COALESCE(?, name), sort_order = COALESCE(?, sort_order) WHERE id = ?',
     ).run(body.name ?? null, body.sort_order ?? null, id)
     const row = db.prepare('SELECT * FROM categories WHERE id = ?').get(id) as Category
+    ws.broadcast('menu:sync', {})
     return c.json(row)
   })
 
@@ -52,6 +56,7 @@ export function categoriesRouter(db: Database.Database) {
     const existing = db.prepare('SELECT * FROM categories WHERE id = ?').get(id)
     if (!existing) return c.json({ error: 'Not found' }, 404)
     db.prepare('DELETE FROM categories WHERE id = ?').run(id)
+    ws.broadcast('menu:sync', {})
     return c.json({ success: true })
   })
 

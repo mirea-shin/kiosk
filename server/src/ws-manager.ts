@@ -12,7 +12,13 @@ export const wsManager = {
   broadcast(event: string, data: unknown) {
     const msg = JSON.stringify({ event, data })
     clients.forEach(ws => {
-      if (ws.readyState === 1) ws.send(msg)
+      if (ws.readyState === 1) {
+        try {
+          ws.send(msg)
+        } catch {
+          // 전송 실패한 클라이언트는 무시 (onclose에서 정리됨)
+        }
+      }
     })
   },
 }

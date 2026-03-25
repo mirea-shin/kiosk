@@ -4,6 +4,7 @@ import { writeFile } from 'fs/promises'
 import { join } from 'path'
 import type Database from 'better-sqlite3'
 import type { Menu, MenuOption } from '@kiosk/shared'
+import type { WsManager } from '../ws-manager.js'
 import { UPLOAD_DIR } from '../paths.js'
 
 const UPLOADS_DIR = join(UPLOAD_DIR, 'menus')
@@ -26,7 +27,7 @@ function attachOptions(db: Database.Database, menus: MenuRow[]): Menu[] {
   }))
 }
 
-export function menusRouter(db: Database.Database) {
+export function menusRouter(db: Database.Database, ws: WsManager) {
   const app = new Hono()
 
   app.get('/', (c) => {
@@ -82,6 +83,7 @@ export function menusRouter(db: Database.Database) {
       )
     const menu = db.prepare('SELECT * FROM menus WHERE id = ?').get(result.lastInsertRowid) as MenuRow
     const [withOptions] = attachOptions(db, [menu])
+    ws.broadcast('menu:sync', {})
     return c.json(withOptions, 201)
   })
 
@@ -109,6 +111,7 @@ export function menusRouter(db: Database.Database) {
       for (const item of items) update.run(item.sort_order, item.id)
     })
     updateAll(body)
+    ws.broadcast('menu:sync', {})
     return c.json({ success: true })
   })
 
@@ -141,6 +144,7 @@ export function menusRouter(db: Database.Database) {
     )
     const menu = db.prepare('SELECT * FROM menus WHERE id = ?').get(id) as MenuRow
     const [withOptions] = attachOptions(db, [menu])
+    ws.broadcast('menu:sync', {})
     return c.json(withOptions)
   })
 
@@ -149,6 +153,7 @@ export function menusRouter(db: Database.Database) {
     const existing = db.prepare('SELECT * FROM menus WHERE id = ?').get(id)
     if (!existing) return c.json({ error: 'Not found' }, 404)
     db.prepare('DELETE FROM menus WHERE id = ?').run(id)
+    ws.broadcast('menu:sync', {})
     return c.json({ success: true })
   })
 
@@ -164,6 +169,7 @@ export function menusRouter(db: Database.Database) {
     const option = db
       .prepare('SELECT * FROM menu_options WHERE id = ?')
       .get(result.lastInsertRowid) as MenuOption
+    ws.broadcast('menu:sync', {})
     return c.json(option, 201)
   })
 
@@ -175,6 +181,7 @@ export function menusRouter(db: Database.Database) {
       .get(optionId, menuId)
     if (!existing) return c.json({ error: 'Not found' }, 404)
     db.prepare('DELETE FROM menu_options WHERE id = ?').run(optionId)
+    ws.broadcast('menu:sync', {})
     return c.json({ success: true })
   })
 

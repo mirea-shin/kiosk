@@ -22,8 +22,8 @@ export function createApp(db: Database.Database, ws: WsManager) {
   // /uploads/screensaver/a.jpg → server/uploads/screensaver/a.jpg 로 매핑됨
   app.use('/uploads/*', serveStatic({ root: dirname(UPLOAD_DIR) }))
 
-  app.route('/api/categories', categoriesRouter(db))
-  app.route('/api/menus', menusRouter(db))
+  app.route('/api/categories', categoriesRouter(db, ws))
+  app.route('/api/menus', menusRouter(db, ws))
   app.route('/api/orders', ordersRouter(db, ws))
   app.route('/api/screensaver', screensaverRouter(db, ws))
   app.route('/api/branding', brandingRouter(db, ws))
