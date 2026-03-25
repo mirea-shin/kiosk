@@ -38,7 +38,6 @@ export interface MenuFormProps {
   pendingOptions: PendingOption[];
   newOptionName: string;
   newOptionPrice: number;
-  addingOption: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -65,7 +64,6 @@ export default function MenuForm({
   pendingOptions,
   newOptionName,
   newOptionPrice,
-  addingOption,
   onClose,
   onSubmit,
   onInputChange,
@@ -81,7 +79,9 @@ export default function MenuForm({
 }: MenuFormProps) {
   if (!isOpen) return null;
 
-  const currentOptionCount = isEditMode ? options.length : pendingOptions.length;
+  const currentOptionCount = isEditMode
+    ? options.length + pendingOptions.length
+    : pendingOptions.length;
   const isOptionLimitReached = currentOptionCount >= OPT_COUNT_MAX;
 
   return (
@@ -222,7 +222,7 @@ export default function MenuForm({
             <div className="rounded-lg border border-gray-200 overflow-hidden">
               {/* 옵션 목록 */}
               {isEditMode ? (
-                options.length === 0 ? (
+                options.length === 0 && pendingOptions.length === 0 ? (
                   <p className="py-3 text-center text-xs text-gray-400">등록된 옵션이 없습니다</p>
                 ) : (
                   <ul className="divide-y divide-gray-100">
@@ -232,6 +232,17 @@ export default function MenuForm({
                         <div className="flex items-center gap-3">
                           <span className="text-gray-400">+{option.price.toLocaleString()}원</span>
                           <button type="button" onClick={() => onDeleteOption(option.id)} className="text-red-400 hover:text-red-600">
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                    {pendingOptions.map((option, index) => (
+                      <li key={`pending-${index}`} className="flex items-center justify-between px-3 py-2.5 text-sm bg-green-50">
+                        <span className="text-gray-800">{option.name}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-gray-400">+{option.price.toLocaleString()}원</span>
+                          <button type="button" onClick={() => onDeletePendingOption(index)} className="text-red-400 hover:text-red-600">
                             <X size={14} />
                           </button>
                         </div>
@@ -286,11 +297,11 @@ export default function MenuForm({
                 <button
                   type="button"
                   onClick={onAddOption}
-                  disabled={!newOptionName.trim() || addingOption || isOptionLimitReached}
+                  disabled={!newOptionName.trim() || isOptionLimitReached}
                   title={isOptionLimitReached ? `옵션은 최대 ${OPT_COUNT_MAX}개까지 추가할 수 있습니다` : undefined}
                   className="flex items-center gap-1 rounded bg-green-600 px-3 py-1.5 text-sm text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {addingOption ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                  <Plus size={13} />
                   추가
                 </button>
               </div>

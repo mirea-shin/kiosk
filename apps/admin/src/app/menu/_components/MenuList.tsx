@@ -42,9 +42,9 @@ export default function MenuList({
   // 옵션 상태
   const [options, setOptions] = useState<MenuOption[]>([]);
   const [pendingOptions, setPendingOptions] = useState<PendingOption[]>([]);
+  const [deletingOptionIds, setDeletingOptionIds] = useState<Set<number>>(new Set());
   const [newOptionName, setNewOptionName] = useState('');
   const [newOptionPrice, setNewOptionPrice] = useState(0);
-  const [addingOption, setAddingOption] = useState(false);
 
   useEffect(() => { setLocalMenus(menus); }, [menus]);
 
@@ -68,6 +68,7 @@ export default function MenuList({
     setShowForm(false);
     setOptions([]);
     setPendingOptions([]);
+    setDeletingOptionIds(new Set());
     setNewOptionName('');
     setNewOptionPrice(0);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -80,7 +81,18 @@ export default function MenuList({
       ? await api.put<Menu>(`/api/menus/${selectedMenu.id}`, formData)
       : await api.post<Menu>('/api/menus', formData);
 
-    if (!selectedMenu && pendingOptions.length > 0) {
+    if (selectedMenu) {
+      // 수정 모드: 삭제 예약된 옵션 삭제 + 추가된 pending 옵션 생성
+      await Promise.allSettled(
+        [...deletingOptionIds].map((id) => api.delete(`/api/menus/${selectedMenu.id}/options/${id}`)),
+      );
+      if (pendingOptions.length > 0) {
+        await Promise.all(
+          pendingOptions.map((opt) => api.post(`/api/menus/${selectedMenu.id}/options`, opt)),
+        );
+      }
+    } else if (pendingOptions.length > 0) {
+      // 추가 모드: pending 옵션 생성
       await Promise.all(
         pendingOptions.map((opt) => api.post(`/api/menus/${res.id}/options`, opt)),
       );
@@ -93,6 +105,8 @@ export default function MenuList({
     setSelectedMenu(menu);
     setFormData({ ...menu });
     setOptions(menu.options ?? []);
+    setPendingOptions([]);
+    setDeletingOptionIds(new Set());
     setNewOptionName('');
     setNewOptionPrice(0);
     setShowForm(true);
@@ -131,32 +145,16 @@ export default function MenuList({
   };
 
   // ── 옵션 ────────────────────────────────────────────────
-  const handleAddOption = async () => {
+  const handleAddOption = () => {
     if (!newOptionName.trim()) return;
-    if (selectedMenu) {
-      setAddingOption(true);
-      try {
-        const created = await api.post<MenuOption>(
-          `/api/menus/${selectedMenu.id}/options`,
-          { name: newOptionName.trim(), price: newOptionPrice },
-        );
-        setOptions((prev) => [...prev, created]);
-        setNewOptionName('');
-        setNewOptionPrice(0);
-      } finally {
-        setAddingOption(false);
-      }
-    } else {
-      setPendingOptions((prev) => [...prev, { name: newOptionName.trim(), price: newOptionPrice }]);
-      setNewOptionName('');
-      setNewOptionPrice(0);
-    }
+    setPendingOptions((prev) => [...prev, { name: newOptionName.trim(), price: newOptionPrice }]);
+    setNewOptionName('');
+    setNewOptionPrice(0);
   };
 
-  const handleDeleteOption = async (optionId: number) => {
-    if (!selectedMenu) return;
-    await api.delete(`/api/menus/${selectedMenu.id}/options/${optionId}`);
+  const handleDeleteOption = (optionId: number) => {
     setOptions((prev) => prev.filter((o) => o.id !== optionId));
+    setDeletingOptionIds((prev) => new Set([...prev, optionId]));
   };
 
   return (
@@ -186,7 +184,6 @@ export default function MenuList({
         pendingOptions={pendingOptions}
         newOptionName={newOptionName}
         newOptionPrice={newOptionPrice}
-        addingOption={addingOption}
         onClose={resetForm}
         onSubmit={handleFormSubmit}
         onInputChange={(e) => {
