@@ -12,14 +12,15 @@
 
 | 스크린세이버 | 메뉴 선택 | 장바구니 | 주문 완료 |
 |:-----------:|:--------:|:-------:|:--------:|
-| ![screensaver](docs/screenshots/screensaver.png) | ![menu](docs/screenshots/menu.png) | ![cart](docs/screenshots/cart.png) | ![complete](docs/screenshots/complete.png) |
+| <img width="216" height="384" alt="screensaver" src="https://github.com/user-attachments/assets/87b291c6-4136-4d18-9625-cef6ab7c95f0" /> | <img width="216" height="384" alt="menu" src="https://github.com/user-attachments/assets/e34348a3-2ab3-4420-a33b-743a4b360949" />|<img width="216" height="384" alt="cart" src="https://github.com/user-attachments/assets/ec8b0bf9-4cfd-4fd0-8fb0-f57a47c1c3ac" />|<img width="216" height="384" alt="complete" src="https://github.com/user-attachments/assets/6b519eff-c151-4614-a0f4-0ebf0100dd00" />|
 
 ### 어드민 대시보드 (점주용)
 
-| 주문 관리 | 메뉴 관리 | 스크린세이버 설정 | 브랜딩 |
-|:--------:|:--------:|:---------------:|:-----:|
-| ![orders](docs/screenshots/admin-orders.png) | ![menu-admin](docs/screenshots/admin-menu.png) | ![screensaver-admin](docs/screenshots/admin-screensaver.png) | ![branding](docs/screenshots/admin-branding.png) |
-
+| **주문 관리** | **메뉴 관리** |
+| :---: | :---: |
+|<img width="3420" height="1724" alt="admin_order" src="https://github.com/user-attachments/assets/e80289b5-8cf4-4b27-9334-404545da61f3" />|<img width="3420" height="1724" alt="admin_menu" src="https://github.com/user-attachments/assets/23de96b8-fe78-49ca-b39f-3a30f96f6f26" />|
+| **스크린세이버 설정** | **브랜딩** |
+|<img width="3420" height="1724" alt="admin_screensaver" src="https://github.com/user-attachments/assets/b1e76b97-c56c-4731-9c50-87c8a5ea57a9" />| <img width="3420" height="1724" alt="admin_brand" src="https://github.com/user-attachments/assets/b667f122-5eb1-4ad6-af7a-5abee210f1ce" />|
 <br>
 
 ## 주요 기능
@@ -31,12 +32,13 @@
 
 **어드민 대시보드**
 - 실시간 주문 수신 및 상태 관리 (대기 → 접수 → 준비중 → 완료)
+- 실시간 메뉴 상태 관리
 - 메뉴 · 카테고리 CRUD 및 드래그 앤 드롭 정렬
 - 스크린세이버 미디어(이미지/영상) 업로드 · 순서 변경 · 게시
 - 브랜드 컬러 설정
 
 **공통**
-- WebSocket 기반 실시간 주문 동기화 (주문 발생 즉시 어드민에 반영)
+- WebSocket 기반 실시간 동기화 (주문 발생 즉시 어드민에 반영, 메뉴 변경 즉시 키오스크에 반영)
 - Railway를 통한 서버 배포
 
 <br>
@@ -45,13 +47,13 @@
 
 | 영역 | 기술 | 선택 이유 |
 |------|------|----------|
-| **키오스크** | Electron 34 + React 19 + Vite | 웹 기술로 데스크톱 앱 구현, 오프라인 동작 및 OS 수준 창 제어 |
+| **키오스크** | Electron 34 + React 19 + Vite | 웹 기술로 데스크톱 앱 구현 |
 | **어드민** | Next.js 15 (App Router) | 파일 기반 라우팅, SSR · 정적 최적화 |
 | **서버** | Hono + better-sqlite3 | 경량 고성능 API 프레임워크, 단일 파일 DB로 배포 단순화 |
 | **상태 관리** | Zustand + TanStack Query | 클라이언트 UI 상태(Zustand)와 서버 데이터(Query) 책임 분리 |
 | **스타일** | Tailwind CSS v4 | 최신 CSS-first 구성, 별도 설정 파일 불필요 |
 | **모노레포** | pnpm workspace | 패키지 간 타입 공유, 의존성 중복 설치 방지 |
-| **실시간** | WebSocket (`@hono/node-ws`) | 주문 발생 즉시 어드민 화면 갱신 |
+| **실시간** | WebSocket (`@hono/node-ws`) | 상태 변경 즉시 화면 갱신 |
 
 <br>
 
@@ -82,17 +84,8 @@
 └─────────────────────────────────────────────────────┘
 ```
 
-**Electron 보안 모델**
 
-`contextIsolation: true` + preload bridge 패턴으로 renderer와 Node.js 환경을 격리합니다.
 
-```
-Renderer (React) ──► window.electronAPI.method()
-                              │
-                     preload.ts (contextBridge)
-                              │
-                     main.ts (ipcMain.handle)
-```
 
 <br>
 
@@ -142,15 +135,6 @@ pnpm admin:dev
 pnpm kiosk:dev
 ```
 
-### 빌드 및 패키징
-
-```bash
-# 서버 + 어드민 빌드
-pnpm build
-
-# Electron 앱 패키징
-pnpm --filter @kiosk/kiosk package
-```
 
 <br>
 
