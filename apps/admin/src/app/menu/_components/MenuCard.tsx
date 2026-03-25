@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { ImageIcon, Pencil, Trash2 } from 'lucide-react';
 
 export default function MenuCard({
@@ -24,6 +24,8 @@ export default function MenuCard({
   handleToggleAvailable: () => void;
   isDragging?: boolean;
 }) {
+  const [imgErrored, setImgErrored] = useState(false);
+
   return (
     <div
       className={`rounded-2xl border bg-white shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md ${
@@ -34,8 +36,13 @@ export default function MenuCard({
     >
       <div className="flex gap-3 p-4">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-gray-100">
-          {image_url ? (
-            <img src={image_url} alt={name} className="h-full w-full rounded-xl object-cover" />
+          {image_url && !imgErrored ? (
+            <img
+              src={image_url}
+              alt={name}
+              className="h-full w-full rounded-xl object-cover"
+              onError={() => setImgErrored(true)}
+            />
           ) : (
             <ImageIcon size={28} className="text-gray-400" />
           )}
