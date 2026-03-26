@@ -6,6 +6,27 @@
 
 <br>
 
+## 체험하기
+
+| 구분 | 링크 및 다운로드 |
+| :--- | :--- |
+| **어드민 대시보드** | [kiosk-admin-three.vercel.app](https://kiosk-admin-three.vercel.app) |
+| **키오스크 앱** | [📥 최신 버전 다운로드 (GitHub)](https://github.com/mirea-shin/kiosk/releases/latest) |
+
+어드민 대시보드를 자유롭게 수정해보세요.
+사이드바 하단 **초기화** 버튼으로 메뉴 · 스크린세이버 · 브랜드 설정을 기본값으로 되돌릴 수 있습니다.
+  
+  > **키오스크 앱 설치**: Releases 페이지에서 운영체제에 맞는 파일을 받으세요.
+  > - macOS: `.dmg`
+  > - Windows: `.exe`
+  > - Linux: `.AppImage`
+
+  > **참고**: 키오스크 앱은 배포된 서버에 연결된 빌드 기준입니다. 로컬 개발 시에는
+  [시작하기](#start) 를 따라주세요.
+
+
+<br>
+
 ## 화면 구성
 
 ### 키오스크 (고객용)
@@ -104,21 +125,17 @@
 
 `packages/shared`에 도메인 타입(`Menu`, `Order`, `OrderStatus` 등)을 정의하고, 세 앱이 빌드 단계 없이 직접 소스를 참조합니다. 각 앱은 `tsconfig paths`, Vite alias, `transpilePackages` 세 레이어를 통해 일관되게 해석합니다.
 
-### 2. Electron 이중 컴파일
-
-Renderer(DOM 환경)와 Main process(Node.js 환경)를 `tsconfig.json` / `tsconfig.node.json`으로 분리 컴파일합니다. 개발 시 Vite dev server, tsc watch, Electron을 `concurrently`로 병렬 실행하며 `wait-on`으로 준비 완료를 기다립니다.
-
-### 3. WebSocket 실시간 동기화
+### 2. WebSocket 실시간 동기화
 
 주문 생성 API 응답 후 `wsManager.broadcast()`로 모든 연결 클라이언트에 즉시 이벤트를 전파합니다. 어드민은 WebSocket 메시지를 수신하면 TanStack Query 캐시를 무효화하여 주문 목록을 자동 갱신합니다.
 
-### 4. 스크린세이버 게시 워크플로우
+### 3. 스크린세이버 게시 워크플로우
 
 미디어 업로드 · 순서 변경 · 설정 수정은 `changelog` 테이블에 임시 기록되고, 점주가 명시적으로 "게시"를 누를 때 키오스크에 반영됩니다. 미적용 변경사항을 구분하여 실수로 반영되는 것을 방지합니다.
 
 <br>
 
-## 시작하기
+## 시작하기 <a id="start"></a>
 
 ### 요구사항
 
