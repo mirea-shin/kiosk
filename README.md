@@ -32,13 +32,22 @@
 
 **어드민 대시보드**
 - 실시간 주문 수신 및 상태 관리 (대기 → 접수 → 준비중 → 완료)
-- 실시간 메뉴 상태 관리
-- 메뉴 · 카테고리 CRUD 및 드래그 앤 드롭 정렬
+- 실시간 메뉴 · 카테고리 CRUD 및 드래그 앤 드롭 정렬
 - 스크린세이버 미디어(이미지/영상) 업로드 · 순서 변경 · 게시
 - 브랜드 컬러 설정
 
 **공통**
 - WebSocket 기반 실시간 동기화 (주문 발생 즉시 어드민에 반영, 메뉴 변경 즉시 키오스크에 반영)
+    - 🔄 주문 상태 동기화
+    - ![order_sync](https://github.com/user-attachments/assets/2c48047d-6ca3-4f4f-a275-baffa59a099a)
+
+    - 🍔 메뉴 변경 실시간 반영
+    - ![menu_sync](https://github.com/user-attachments/assets/16564f82-cd1f-49f5-b428-52cf83cdcac0)
+ 
+    - 🎨 브랜딩 / 테마 변경
+    - ![branding_sync](https://github.com/user-attachments/assets/08cb5b81-a2f8-41e5-8c24-0c28c6b22196)
+
+
 - Railway를 통한 서버 배포
 
 <br>
