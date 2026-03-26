@@ -6,24 +6,32 @@
 
 <br>
 
-## 체험하기
+## 체험하기 
 
-| 구분 | 링크 및 다운로드 |
-| :--- | :--- |
-| **어드민 대시보드** | [kiosk-admin-three.vercel.app](https://kiosk-admin-three.vercel.app) |
-| **키오스크 앱** | [📥 최신 버전 다운로드 (GitHub)](https://github.com/mirea-shin/kiosk/releases/latest) |
+  | 구분 | 링크 |                                                                                                
+  | :--- | :--- |
+  | **어드민 대시보드** | [kiosk-admin-three.vercel.app](https://kiosk-admin-three.vercel.app) |               
+  | **키오스크 앱** | [📥 최신 버전 다운로드 (GitHub Releases)](https://github.com/mireashin/kiosk/releases/latest) |
 
-어드민 대시보드를 자유롭게 수정해보세요.
-사이드바 하단 **초기화** 버튼으로 메뉴 · 스크린세이버 · 브랜드 설정을 기본값으로 되돌릴 수 있습니다.
-  
-  > **키오스크 앱 설치**: Releases 페이지에서 운영체제에 맞는 파일을 받으세요.
-  > - macOS: `.dmg`
-  > - Windows: `.exe`
-  > - Linux: `.AppImage`
+  어드민 대시보드를 자유롭게 수정해보세요.
+  사이드바 하단 **초기화** 버튼으로 메뉴 · 스크린세이버 · 브랜드 설정을 기본값으로 되돌릴 수 있습니다.
 
-  > **참고**: 키오스크 앱은 배포된 서버에 연결된 빌드 기준입니다. 로컬 개발 시에는
-  [시작하기](#start) 를 따라주세요.
+  ### 키오스크 앱 설치
 
+  Releases 페이지에서 운영체제에 맞는 파일을 받으세요.
+
+  - macOS: `.dmg`
+  - Windows: `.exe`
+  - Linux: `.AppImage`
+
+  > **macOS** — "손상되었거나 열 수 없음" 메시지가 뜨면 터미널에서 아래 명령어 실행 후 다시 여세요.
+  > ```bash
+  > xattr -cr /Applications/Kiosk.app
+  > ```
+
+  > **Windows** — "Windows가 PC를 보호했습니다" 창이 뜨면 **추가 정보 → 실행**을 클릭하세요.
+
+  > 키오스크 앱은 배포된 서버에 연결된 빌드 기준입니다. 로컬 개발은 [시작하기](#시작하기)를 참고하세요.
 
 <br>
 
