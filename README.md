@@ -11,7 +11,7 @@
   | 구분 | 링크 |                                                                                                
   | :--- | :--- |
   | **어드민 대시보드** | [kiosk-admin-three.vercel.app](https://kiosk-admin-three.vercel.app) |               
-  | **키오스크 앱** | [📥 최신 버전 다운로드 (GitHub Releases)](https://github.com/mireashin/kiosk/releases/latest) |
+  | **키오스크 앱** | [📥 최신 버전 다운로드 (GitHub Releases)](https://github.com/mirea-shin/kiosk/releases/latest) |
 
   어드민 대시보드를 자유롭게 수정해보세요.
   사이드바 하단 **초기화** 버튼으로 메뉴 · 스크린세이버 · 브랜드 설정을 기본값으로 되돌릴 수 있습니다.
